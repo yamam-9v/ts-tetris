@@ -158,6 +158,10 @@ function canPlace(board: Board, piece: ActivePiece): boolean
 function moveAndDraw(): void
 ```
 
+### 5.4 その他の細かいスタイル規約
+
+- 空文字列は `""` に統一する(`" "` のような意味のない空白での代用はしない)。
+
 ---
 
 ## 6. スコープ管理
