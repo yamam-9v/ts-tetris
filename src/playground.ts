@@ -4,13 +4,13 @@
 
 // --- 実験1: noImplicitAny ---
 // 引数 x に型注釈がない。strict なしなら x は暗黙的に any になる。
-function double(x: number) {
+export function double(x: number) {
   return x * 2;
 }
 
 // --- 実験2: strictNullChecks ---
 // name が undefined かもしれない状態で .toUpperCase() を呼んでいる。
-function greet(name: string | undefined) {
+export function greet(name: string | undefined) {
   if (typeof name === "string") {
     return name.toUpperCase();
   }
@@ -38,7 +38,7 @@ type RequestState =
   | { kind: "error"; message: string }
   | { kind: "cancelled" };
 
-function describeState(state: RequestState): string {
+export function describeState(state: RequestState): string {
   switch (state.kind) {
     case "idle":
       return "まだ何もしていません";

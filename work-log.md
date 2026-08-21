@@ -29,8 +29,8 @@
 |---|---|---|
 | 第1: ブロックが落ちて積み上がる | 1. WSL2 + Vite 環境構築 | 完了 |
 | 第1 | 2. TS 素振り | 完了 |
-| 第1 | 3. Canvas 描画とゲームループ | 未着手 |
-| 第1 | 4. コアの型設計 | 未着手 |
+| 第1 | 3. Canvas 描画とゲームループ | 完了 |
+| 第1 | 4. コアの型設計 | 完了 |
 | 第1 | 5. 落下と衝突判定 | 未着手 |
 | 第2: 遊べる | 6. 回転(簡易版) | 未着手 |
 | 第2 | 7. ライン消去とスコア | 未着手 |
@@ -120,3 +120,43 @@ Docker化に着手するタイミングで、`~/projects/ts-tetris` の最新状
   - 「判別可能ユニオンと値オブジェクトの違いとして、新しい関数を増やすのが簡単な判別可能ユニオン、新しい種類(バリアント)を増やすのが簡単な値オブジェクトという違いを認識した」(expression problem)
   - 「判別可能ユニオンでバリアントを増やした時、実装忘れ対策(網羅チェック)で never 型が使えるということを学んだ」
 - 次回やること: ステップ3(Canvas描画とゲームループの土台)に着手する。
+
+## 2026-08-21
+
+- マイルストーン / ステップ: 3. Canvas 描画とゲームループの土台(完了)
+- やったこと:
+  - Vite雛形の装飾部分(`counter.ts`、`src/assets/`、`index.html`/`style.css`の装飾HTML・CSS)を削除し、`<canvas id="game-canvas" width="240" height="400">` とシンプルな中央寄せCSSに置き換え。
+  - `src/render.ts` を新規作成。定型的な描画処理として `clearCanvas`(`ctx.clearRect`)、`drawSquare`(`ctx.fillRect`)をClaudeが実装。
+  - `getCanvasContext()`(canvas要素の取得と `getContext('2d')` のnullチェック)を `TODO(human)` として学習者に依頼。ステップ2で学んだ `strictNullChecks` / 型ガードの実践課題と位置づけ。
+    1. 最初は `document.getElementById` の戻り値を `instanceof HTMLElement` で絞り込む実装になり、`getContext` が呼べない(絞り込み先が具体的すぎない)ことに気づいて `instanceof HTMLCanvasElement` に修正。
+    2. `getContext("2d")` の戻り値も `CanvasRenderingContext2D | null` であることを確認し、同様に `instanceof CanvasRenderingContext2D` でnullチェック。
+    3. 最初は `if/else` のネストで実装し、両方の `else` が `throw` で終わることに着目して**ガード節(早期リターン)**にリファクタリング。TypeScriptの型の絞り込みが `if (!(x instanceof T)) { throw }` の後のコードにも及ぶことを確認。
+    4. エラーの投げ方について、`throw` vs カスタムErrorクラス vs 判別可能ユニオンでの失敗表現、の3択を比較。今回は「起動時一度きりで回復不能な失敗」のため素直な `throw new Error(明確なメッセージ)` を採用。判別可能ユニオンでの失敗表現はステップ10(localStorage検証、回復可能な失敗)向けと位置づけ。
+  - `main.ts` にゲームループの土台(`requestAnimationFrame` で0.5秒ごとに四角形を1マス下に動かす)をClaudeが実装。ブラウザで四角形が一定間隔で下に動くことを目視確認済み。
+  - `src/playground.ts`(ステップ2の実験用ファイル)は参照用に残す方針とし、未使用エクスポートによる `tsc --noEmit` エラーを解消するため `double` / `greet` / `describeState` に `export` を付与(ロジック変更なし)。
+  - `npx tsc --noEmit` が通ることを確認。
+- 詰まった点(JS由来 / TS由来 / 環境由来):
+  - TS由来: `HTMLElement` への絞り込みでは `getContext` メソッドが呼べない(型が具体的すぎない)ことに気づかず、一旦 `HTMLCanvasElement` まで絞り込む必要があると学んだ。
+  - TS由来: `else` が常に `throw`/`return` で終わる分岐は省略でき、絞り込みがブロックの外にも及ぶ(制御フロー解析)ことを実験で確認。
+- 新しく理解した型の概念(本人の言葉):
+  - 「HTMLCanvasElement, CanvasRenderingContext2Dという型の絞り込み方を学んだ」
+- 次回やること: ステップ4(コアの型設計: Piece / Board / GameState)に着手する。
+
+## 2026-08-21 (2)
+
+- マイルストーン / ステップ: 4. コアの型設計(完了)
+- やったこと:
+  - `src/types.ts` を新規作成し、`PieceKind` / `Cell` / `Board` / `ActivePiece` / `GameState` の5つの型を学習者が段階的に実装。ファイル冒頭に `board[y][x]` の座標系規約をコメントで明記。
+  - `PieceKind`: 最初は各バリアントを `{ kind: "I" }` のようなオブジェクトにする判別可能ユニオン風の設計をしたが、バリアント間でデータの形が同じ(タグ以外に情報がない)ため過剰と判断し、文字列リテラルの合併型 `"I" | "O" | ... | "L"` に修正。
+  - `Cell`: `PieceKind | null` として一発で正しく実装(`0`や`""`ではなく`null`を選んだ理由を確認)。
+  - `Board`: `ReadonlyArray<ReadonlyArray<Cell>>` として正しく実装。`readonly Cell[][]`だと外側の配列しか`readonly`にならない落とし穴を回避できた。あわせて「ジェネリクスの`<T>`(要素の型を決める)」と「`ReadonlyArray`自体(書き込み不可にする)」が独立した軸であることを確認。
+  - `ActivePiece`: 最初 `{posX} | {posY} | {kind} | {rotation}` という誤ったユニオン(OR)で実装してしまい、`piece.kind` にアクセスしようとするとエラーになることを`tsc --noEmit`で実際に確認してから、1つのオブジェクト型(AND、全プロパティを同時に持つ)に修正。回転状態は形状データそのものではなく `rotation: 0 | 1 | 2 | 3` というインデックスのみを持つ設計を選択(実際の形状テーブルはステップ5で用意する方針)。
+  - `GameState`: `ready` / `playing` / `paused` / `gameover` の4バリアントを、今度はバリアントごとにデータの形が異なる正しい判別可能ユニオンとして一発で実装。`playing`と`paused`は同じ形(`board` / `current` / `score`)になったが、重複が小さいため共通化はせずそのままとした。
+  - すべての型に `export` を付与(`Board`・`ActivePiece`・`GameState`がどこからも使われておらず`tsc`の未使用警告に引っかかったため。`export`された宣言は他ファイルから使われる可能性があるとみなされ対象外になることを確認)。
+  - `npx tsc --noEmit` が通ることを確認。
+- 詰まった点(JS由来 / TS由来 / 環境由来):
+  - TS由来: `PieceKind`で「バリアント間の情報量が同じなら文字列リテラル合併型で十分、判別可能ユニオン(オブジェクト化)は情報量が違うときに使う」という使い分けを誤りかけた。
+  - TS由来: `ActivePiece`で「複数のプロパティを同時に持つ(AND)」型を`|`(OR)で書いてしまう間違いをした。`tsc --noEmit`で実際にプロパティアクセスのエラーを起こして体感し、1つのオブジェクト型にまとめる形に修正した。
+- 新しく理解した型の概念(本人の言葉):
+  - 「ただ単に選択肢のどれかの型、プロパティを全て持つ必要がある型、バリアントごとに持つべきプロパティが異なる型を学んだ」
+- 次回やること: ステップ5(落下と衝突判定)に着手する。座標系規約(計画書5.1)を先に再確認すること。ステップ5は計画書で「最難関」とされている。
