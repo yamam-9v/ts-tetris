@@ -1,10 +1,10 @@
 import type { Board, ActivePiece } from "./types";
-import { PIECE_SHAPES } from "./pieces";
+import { getPieceShape } from "./rotation";
 
 // board[y][x] とする(y=行/上から、x=列/左から)。
 
 export function canPlace(board: Board, piece: ActivePiece): boolean {
-  const boardPos = PIECE_SHAPES[piece.kind].map((offset) => ({
+  const boardPos = getPieceShape(piece.kind, piece.rotation).map((offset) => ({
     x: piece.x + offset.x,
     y: piece.y + offset.y,
   }));
@@ -19,7 +19,7 @@ export function canPlace(board: Board, piece: ActivePiece): boolean {
 }
 
 export function lockPiece(board: Board, piece: ActivePiece): Board {
-  const boardPos = PIECE_SHAPES[piece.kind].map((offset) => ({
+  const boardPos = getPieceShape(piece.kind, piece.rotation).map((offset) => ({
     x: piece.x + offset.x,
     y: piece.y + offset.y,
   }));
@@ -30,4 +30,25 @@ export function lockPiece(board: Board, piece: ActivePiece): Board {
       return cell;
     }),
   );
+}
+
+// ピースを時計回りに90度回転させる。回転後の位置に置けない場合は、
+// キック(壁際でのずらし)は行わず、回転前の piece をそのまま返す(スコープ外・計画書6.1)。
+//
+// TODO(human): rotation を次の状態(0→1→2→3→0)に進めた新しい ActivePiece を作り、
+// canPlace で置けるか確認する。置けなければ元の piece を返す。
+//
+// 型のヒント: rotation の型は number ではなく 0 | 1 | 2 | 3(リテラル型のユニオン)。
+// piece.rotation + 1 は型としては number になってしまうので、そのままは代入できない。
+// 対処法はいくつかある(自分で選んでよい):
+//   - switch文で 0→1, 1→2, 2→3, 3→0 を明示的に書く
+//   - (piece.rotation + 1) % 4 を計算した上で、それが 0|1|2|3 であることを
+//     TypeScriptに伝える(as を使う、など)
+export function rotate(board: Board, piece: ActivePiece): ActivePiece {
+  // TODO(human)
+  const newRotation: ActivePiece["rotation"] = (piece.rotation + 1) % 4 as 0|1|2|3;
+  const newPiece: ActivePiece = {...piece, rotation: newRotation};
+
+  if (canPlace(board, newPiece)) return newPiece;
+  return piece;
 }

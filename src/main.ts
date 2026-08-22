@@ -1,7 +1,7 @@
 import "./style.css";
 import { getCanvasContext, clearCanvas, drawSquare } from "./render";
-import { canPlace, lockPiece } from "./collision";
-import { PIECE_SHAPES } from "./pieces";
+import { canPlace, lockPiece, rotate } from "./collision";
+import { getPieceShape } from "./rotation";
 import type { Board, ActivePiece, PieceKind } from "./types";
 
 const BOARD_WIDTH = 12;
@@ -39,7 +39,7 @@ function drawBoard(board: Board): void {
 }
 
 function drawPiece(piece: ActivePiece): void {
-  PIECE_SHAPES[piece.kind].forEach((offset) => {
+  getPieceShape(piece.kind, piece.rotation).forEach((offset) => {
     drawSquare(
       ctx,
       (piece.x + offset.x) * CELL_SIZE,
@@ -74,5 +74,13 @@ function loop(timestamp: number): void {
 
   requestAnimationFrame(loop);
 }
+
+// 暫定のキー入力(ステップ6の動作確認用)。
+// 本格的なキー入力(左右移動・ソフト/ハードドロップ含む)はステップ8で扱う。
+window.addEventListener("keydown", (event) => {
+  if (event.key === "ArrowUp") {
+    current = rotate(board, current);
+  }
+});
 
 requestAnimationFrame(loop);
