@@ -2,6 +2,7 @@ import "./style.css";
 import { getCanvasContext, clearCanvas, drawSquare } from "./render";
 import { canPlace, lockPiece, rotate } from "./collision";
 import { getPieceShape } from "./rotation";
+import { clearFullRows, calculateScore } from "./lines";
 import type { Board, ActivePiece, PieceKind } from "./types";
 
 const BOARD_WIDTH = 12;
@@ -12,6 +13,12 @@ const FALL_INTERVAL_MS = 500;
 const PIECE_KINDS: readonly PieceKind[] = ["I", "O", "T", "S", "Z", "J", "L"];
 
 const ctx = getCanvasContext();
+
+const scoreDisplayEl = document.getElementById("score-display");
+if (!(scoreDisplayEl instanceof HTMLDivElement)) {
+  throw new Error("score-displayが見つかりません");
+}
+const scoreDisplay: HTMLDivElement = scoreDisplayEl;
 
 function createEmptyBoard(): Board {
   return Array.from({ length: BOARD_HEIGHT }, () =>
@@ -27,6 +34,7 @@ function spawnPiece(): ActivePiece {
 let board: Board = createEmptyBoard();
 let current: ActivePiece = spawnPiece();
 let lastFallTime = 0;
+let score = 0;
 
 function drawBoard(board: Board): void {
   board.forEach((row, y) => {
@@ -56,7 +64,10 @@ function loop(timestamp: number): void {
     if (canPlace(board, moved)) {
       current = moved;
     } else {
-      board = lockPiece(board, current);
+      const locked = lockPiece(board, current);
+      const { clearedBoard, clearedLineCount } = clearFullRows(locked);
+      board = clearedBoard;
+      score += calculateScore(clearedLineCount);
       current = spawnPiece();
       // 新しく出したピースが置けない = 積み上がりすぎ。
       // 正式なゲームオーバー処理はステップ9で扱うので、今は単純にリセットする。
@@ -71,6 +82,7 @@ function loop(timestamp: number): void {
   clearCanvas(ctx, BOARD_WIDTH * CELL_SIZE, BOARD_HEIGHT * CELL_SIZE);
   drawBoard(board);
   drawPiece(current);
+  scoreDisplay.textContent = `Score: ${score}`;
 
   requestAnimationFrame(loop);
 }
