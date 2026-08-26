@@ -1,6 +1,6 @@
 import "./style.css";
 import { getCanvasContext, clearCanvas, drawSquare } from "./render";
-import { canPlace, lockPiece, rotate } from "./collision";
+import { canPlace, lockPiece, rotate, move, hardDrop } from "./collision";
 import { getPieceShape } from "./rotation";
 import { clearFullRows, calculateScore } from "./lines";
 import type { Board, ActivePiece, PieceKind } from "./types";
@@ -87,11 +87,30 @@ function loop(timestamp: number): void {
   requestAnimationFrame(loop);
 }
 
-// 暫定のキー入力(ステップ6の動作確認用)。
-// 本格的なキー入力(左右移動・ソフト/ハードドロップ含む)はステップ8で扱う。
 window.addEventListener("keydown", (event) => {
-  if (event.key === "ArrowUp") {
-    current = rotate(board, current);
+  switch (event.key) {
+    case "ArrowUp":
+      current = rotate(board, current);
+      break;
+    case "ArrowLeft":
+      current = move(board, current, -1, 0);
+      break;
+    case "ArrowRight":
+      current = move(board, current, 1, 0);
+      break;
+    case "ArrowDown":
+      current = move(board, current, 0, 1);
+      // 自然落下のタイマーもリセットし、直後に二重で1マス落ちるのを防ぐ。
+      lastFallTime = performance.now();
+      break;
+    case " ":
+      current = hardDrop(board, current);
+      // lastFallTime をリセットせず 0 のままにしておくことで、
+      // 次の loop() の判定 (timestamp - lastFallTime > FALL_INTERVAL_MS) を
+      // 必ず真にし、すでに底に着いているピースをすぐロックさせる。
+      lastFallTime = 0;
+      event.preventDefault(); // スペースキーによるページスクロールを防ぐ
+      break;
   }
 });
 

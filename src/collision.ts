@@ -45,10 +45,38 @@ export function lockPiece(board: Board, piece: ActivePiece): Board {
 //   - (piece.rotation + 1) % 4 を計算した上で、それが 0|1|2|3 であることを
 //     TypeScriptに伝える(as を使う、など)
 export function rotate(board: Board, piece: ActivePiece): ActivePiece {
-  // TODO(human)
   const newRotation: ActivePiece["rotation"] = (piece.rotation + 1) % 4 as 0|1|2|3;
   const newPiece: ActivePiece = {...piece, rotation: newRotation};
 
   if (canPlace(board, newPiece)) return newPiece;
   return piece;
+}
+
+// piece を (dx, dy) だけずらせるか試す。
+// 左右移動(dx=±1, dy=0)とソフトドロップ(dx=0, dy=1)の両方をこの1つの関数でまかなう。
+// 置ければずらした新しい ActivePiece を、置けなければ元の piece をそのまま返す(rotate と同じ形)。
+export function move(board: Board, piece: ActivePiece, dx: number, dy: number): ActivePiece {
+  const newX: ActivePiece["x"] = piece.x + dx;
+  const newY: ActivePiece["y"] = piece.y + dy;
+  const newPiece: ActivePiece = {...piece, x: newX, y: newY};
+
+  if (canPlace(board, newPiece)) return newPiece;
+  return piece;
+}
+
+// piece を、これ以上下に動かせなくなる(= move(board, piece, 0, 1) を呼んでも
+// 位置が変わらなくなる)ところまで一気に落とした ActivePiece を返す。
+// ロック(lockPiece)まではここでは行わない(呼び出し側の責任)。
+//
+// TODO(human): 実装する。move を繰り返し使えばよい。
+export function hardDrop(board: Board, piece: ActivePiece): ActivePiece {
+  // TODO(human)
+  let newPiece = piece;
+  const tryMove = () => move(board, newPiece, 0, 1);
+  while(true) {
+    const next = tryMove();
+    if (next === newPiece) break;
+    newPiece = next;
+  }
+  return newPiece;
 }
