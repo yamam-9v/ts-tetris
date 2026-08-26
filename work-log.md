@@ -35,7 +35,7 @@
 | 第2: 遊べる | 6. 回転(簡易版) | 完了 |
 | 第2 | 7. ライン消去とスコア | 完了 |
 | 第2 | 8. キー入力と落下速度調整 | 完了 |
-| 第2 | 8.5. 非同期処理(スプライト画像読み込み) | 未着手 |
+| 第2 | 8.5. 非同期処理(スプライト画像読み込み) | 完了(第2マイルストーン完了) |
 | 第3: 仕上げる | 9. 状態遷移 | 未着手 |
 | 第3 | 10. localStorage + unknown 検証 + ジェネリクス | 未着手 |
 | 第3 | 11. Dev Container 化 | 未着手 |
@@ -307,3 +307,27 @@ Docker化に着手するタイミングで、`~/projects/ts-tetris` の最新状
   - 「閉包関数を使う価値が出てくるのは、評価する場所が異なる場所になってしまう時」
   - 「今回は評価の場所が同じだが、学習として書いた」
 - 次回やること: 第2マイルストーン ステップ8.5(非同期処理: スプライト画像読み込み)に着手する。第2マイルストーンの完了が近いので、着手前後でVitestの導入(`canPlace`, `lockPiece`, `rotate`, `move`, `hardDrop`, `clearFullRows`, `calculateScore` へのテスト、学習者が書く)も検討する。
+
+## 2026-08-27 (2)
+
+- マイルストーン / ステップ: 8.5. 非同期処理(スプライト画像読み込み)(完了、第2マイルストーン完了)
+- やったこと:
+  - `public/sprites/{I,O,T,S,Z,J,L}.svg`(ピース種類ごとに色分けした単色矩形のSVG、標準的なテトリスカラー)をClaudeが用意(定型アセット準備)。
+  - `src/sprites.ts` を新規作成。`SPRITE_PATHS`(事実データ)はClaudeが用意し、以下2つの純粋な非同期処理を学習者が実装。
+    - `loadImage(src): Promise<HTMLImageElement>`: `new Image()` の `onload`/`onerror`(コールバック形式の古いAPI)を `new Promise((resolve, reject) => {...})` でラップする、いわゆる Promise化(Promisify)。一発で正しく実装(`onload`/`onerror` を先に登録してから `img.src` を設定する順序も正しい)。Playwrightでブラウザ上から実行し、正常系(`HTMLImageElement` として解決、`complete: true`)・異常系(存在しないパスで `Error` としてreject、メッセージも正しい)の両方を確認。
+    - `loadAllSprites(): Promise<Record<PieceKind, HTMLImageElement>>`: `Object.keys(SPRITE_PATHS)` のキー配列を `.map()` で `loadImage(...)` の配列に変換し `Promise.all(...)` で並行読み込みし、結果を `.reduce()` で `Record<PieceKind, HTMLImageElement>` に組み立てる、という設計を一発で正しく実装。Playwrightで7種類すべてが正しく揃うことを確認(18ms)。型面のフィードバックとして、`await` 後の変数を `xxxPromise` のまま使い回していた命名(実態は `HTMLImageElement[]`)を指摘し、学習者が `spriteImages` / `image` に修正。
+  - `src/render.ts` の `drawSquare`(単色塗りつぶし)を `drawSprite`(`ctx.drawImage` でスプライト画像を描画)に置き換え(Claudeが実装、Canvas描画の定型セットアップ)。
+  - `index.html` に `#status-display` を追加し、`src/main.ts` 全体を `async function main()` に組み替え(Claudeが実装、起動フローの配線)。起動時に `await loadAllSprites()` の完了を待ってから盤面表示・ゲームループを開始し、失敗時は `try/catch` で捕捉して `#status-display` にエラーメッセージを表示する形にした。`board`/`current`/`lastFallTime`/`score` などはモジュールトップレベルの変数から `main()` 内のローカル変数(クロージャ経由で `loop`/キーイベントリスナーから参照)に変更。
+  - Playwrightで正常系(色分けされたスプライトが実際に描画される、コンソールエラーなし)と異常系(`page.route()` で `T.svg` のリクエストだけ意図的に `abort` し、1枚でも読み込み失敗すれば `Promise.all` 全体がrejectされてゲームループが始まらず、`#status-display` に「画像の読み込みに失敗しました: 画像が読み込まれませんでした」と分かりやすいエラーが表示されることをスクリーンショットで確認)。
+  - 学習者からの質問「`async` 関数は内部で `await` して値を取り出しているのに、なぜ関数定義の戻り値は `Promise<T>` のままなのか」に対し、「`async` を付けた関数は、中身の実装に関わらず呼び出し元から見た戻り値は必ず `Promise` になる」というJS/TSの言語仕様であることを、`await` を一切使わない `async function double(x: number): Promise<number> { return x * 2; }` の例で説明。
+  - 学習者のまとめ(resolve/reject、Promisify、pending/resolved/rejectedの3状態、asyncの戻り値が必ずPromiseになる仕組み)はおおむね正確だったが、「catchが実行されるとresolvedになる」という1点を訂正。「catchが呼ばれるのはrejectされたから」であり、catch自体が新しいPromiseを作ってそれがresolvedになる場合があるとしても、元のPromiseがresolvedに変わるわけではないことを説明。
+- 詰まった点(JS由来 / TS由来 / 環境由来): なし(学習者の実装は両関数とも一発で正しく、今回はロジックバグの発見・修正ではなく型/命名/概念面のフィードバックが中心だった)。
+- 新しく理解した型の概念(本人の言葉):
+  - 「非同期処理でPromiseを使う時、引数に解決した時に返されるresolve、拒否された時に返されるrejectがある」
+  - 「img.onload, img.onerrorなどのイベントベースの古いAPIをPromiseベースの新しいAPIに変換するPromise化(Promisify)としてimg.onload = () => {resolve(img)}, img.onerror = () => {reject(new Error())}などで包む」
+  - 「Promiseの後に処理を動かしたい時は、await Promise<T> やresolveした後に実行されるPromise().then() や拒否された後に実行されるPromise().catch()などを使う」
+  - 「Promiseはpending(未解決)、resolved(解決済み)、rejected(拒否)の3つの状態がある」
+  - 「関数定義時asyncをつけると関数内で何を返したとしても戻り値は必ずPromiseになる Promise<>で包む必要がある」
+  - (訂正済み)「catchが実行されるとresolvedになる」→ catchが呼ばれるのはrejectされた後であり、元のPromiseがresolvedになるわけではない。
+- 感想: (特記事項なし)
+- 次回やること: 第2マイルストーンが完了した。第3マイルストーン ステップ9(状態遷移: ゲームオーバー/リスタート)に着手する前に、計画書どおりVitestの導入(`canPlace`, `lockPiece`, `rotate`, `move`, `hardDrop`, `clearFullRows`, `calculateScore`, `loadImage`, `loadAllSprites` へのテスト、学習者が書く)を検討する。

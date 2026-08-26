@@ -21,12 +21,12 @@ export function clearCanvas(
   ctx.clearRect(0, 0, width, height);
 }
 
-export function drawSquare(
+export function drawSprite(
   ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
   x: number,
   y: number,
   size: number,
 ): void {
-  ctx.fillStyle = "cyan";
-  ctx.fillRect(x, y, size, size);
+  ctx.drawImage(image, x, y, size, size);
 }
