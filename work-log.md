@@ -331,3 +331,20 @@ Docker化に着手するタイミングで、`~/projects/ts-tetris` の最新状
   - (訂正済み)「catchが実行されるとresolvedになる」→ catchが呼ばれるのはrejectされた後であり、元のPromiseがresolvedになるわけではない。
 - 感想: (特記事項なし)
 - 次回やること: 第2マイルストーンが完了した。第3マイルストーン ステップ9(状態遷移: ゲームオーバー/リスタート)に着手する前に、計画書どおりVitestの導入(`canPlace`, `lockPiece`, `rotate`, `move`, `hardDrop`, `clearFullRows`, `calculateScore`, `loadImage`, `loadAllSprites` へのテスト、学習者が書く)を検討する。
+
+## 2026-08-28
+
+- マイルストーン / ステップ: (第2マイルストーン完了後、ステップ9着手前。Vitest導入とテスト・デバッグ体験)
+- やったこと:
+  - `npm install -D vitest` が `npm error Invalid Version:` で失敗する環境問題に遭遇。原因調査の結果、Vitest追加とは無関係に、既存の `package-lock.json` と npm(11.11.0)/Vite 8(rolldown採用)の組み合わせで、`@rolldown/binding-darwin-x64`(Linux環境では使わないはずのオプション依存)を配置しようとする処理でnpm自体がクラッシュしていることが判明。ユーザーに対処方針を確認のうえ、npmを11.19.1にアップグレード(node 24.14.1と非互換な最新12系は断念)しても再現したため、最終的に `package-lock.json` を削除して依存解決をやり直すことで解消(`package.json` 自体は無変更)。
+  - `vitest`(devDependencies)と、`loadImage`(DOM APIを使う)のテストに備えて `jsdom` を追加。`vite.config.js` を `vitest/config` の `defineConfig` に切り替え、`test: { environment: 'jsdom' }` を追加。`package.json` に `typecheck` / `test`(`vitest run`) / `test:watch`(`vitest`)スクリプトを追加。
+  - `src/lines.test.ts` を新規作成。`calculateScore` を題材にVitestの基本(`describe`/`it`/`expect`、`import`が必要なこと)を実演し、最初の1ケース(0行→0点)をClaudeが書いた後、残り4ケース(1〜4行消去)を学習者が一発で正しく実装。
+  - `clearFullRows` のテストへ進む際、盤面組み立て用の `makeBoard(rows: boolean[])` ヘルパーをClaudeが用意(テストのセットアップ扱い)。学習者が3ケース(揃った行なし/1行揃い/複数行同時消去)を実装する過程で、期待値オブジェクトのプロパティ名タイポ(`clearedLineConut`)による自然な失敗が発生。Vitestのdiff出力(`- Expected` / `+ Received`)の読み方を説明し、学習者が「期待値の変数に `LineClearResult` の型注釈を付ける」ことでタイポを型エラーとして検出できる形に自力で修正。
+  - 本題として、`clearFullRows` の `filter` 条件(`row.some((item) => item === null)`)を `!==` に反転させる意図的なバグをClaudeが仕込み、Vitestを使ったデバッグ体験を実施。①テストのdiff出力から「`clearedLineCount`は合っているが`clearedBoard`の中身が逆」という手がかりを得る→②学習者自身が `console.log(filteredBoard)` を仕込んで中間状態を可視化→③出力から「揃っている行だけが残っている」というパターンに気づく→④条件式を日本語に翻訳し、コメントに書かれた本来の意図(揃っていない行を残す)と突き合わせる→⑤学習者が `!==` → `===` の反転が原因と特定し、自力で修正・`console.log`も削除。8ケース全てパスすることを確認。
+- 詰まった点(JS由来 / TS由来 / 環境由来):
+  - 環境由来: npm 11.11.0 + Vite 8(rolldown)の組み合わせでの `npm install` クラッシュ。原因は(おそらく古いnpm/Viteバージョンの組み合わせで生成された)`package-lock.json` 側の不整合で、再生成により解消。npmバージョン変更自体は直接の解決には寄与しなかった(念のため11.19.1へは上げたままにしてある)。
+- 新しく理解した型の概念 / デバッグ手法(本人の言葉ベース):
+  - テスト結果を見て「`clearedBoard`の内容、`clearedLineCount`の値は正しいものが返ってきているように見えるから真偽値関係のバグ?」と自力で見立てをつけ、`console.log`による中間状態の可視化を経て「真偽値関係 `!==`/`===` が逆転している」と正しく原因を特定できた。
+  - オブジェクト/配列の中身を比較するときは `toBe` ではなく `toEqual` を使う、という使い分けを実践した。
+  - 期待値オブジェクトに明示的な型注釈(`const expected: LineClearResult = {...}`)を付けることで、プロパティ名のタイポを`tsc`が検出できるようになる(`toEqual`自体の引数型は緩いため、注釈なしでは検出されない)ことを体験した。
+- 次回やること: 残りの関数(`canPlace`, `lockPiece`, `rotate`, `move`, `hardDrop`, `loadImage`, `loadAllSprites`)のテストを書く。その後、第3マイルストーン ステップ9(状態遷移: ゲームオーバー/リスタート)に着手する。

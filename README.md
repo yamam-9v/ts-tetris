@@ -10,7 +10,7 @@ TypeScript を身につけることを目的とした学習プロジェクト。
 - TypeScript(`strict: true`)
 - Vite(`vanilla-ts` テンプレート)
 - Canvas 2D API
-- Vitest(第2マイルストーン以降)
+- Vitest
 
 ## セットアップ
 
@@ -29,7 +29,9 @@ npm run dev
 **第2マイルストーン(遊べる)完了。**
 矢印キーで左右移動・回転・ソフトドロップ、スペースキーでハードドロップが効く。
 ピース画像は `src/sprites.ts` の `loadImage`/`loadAllSprites`(Promise化・`Promise.all`による並行読み込み)で `async`/`await` 読み込みしてから盤面が表示され、読み込み失敗時は画面にエラーメッセージが出る状態。
-次は第3マイルストーン ステップ9(状態遷移: ゲームオーバー/リスタート)。Vitestは未導入(着手前後で検討予定)。
+Vitestを導入済み(`npm test` / `npm run test:watch`)。`calculateScore` / `clearFullRows` にテストを実装し、意図的なバグを使ったデバッグ体験も実施。
+残りの純粋関数(`canPlace`, `lockPiece`, `rotate`, `move`, `hardDrop`, `loadImage`, `loadAllSprites`)へのテストは次回。
+その後、第3マイルストーン ステップ9(状態遷移: ゲームオーバー/リスタート)に着手予定。
 学習計画にステップ10へのジェネリクス学習統合を追加済み(実装は未着手)。詳細は `work-log.md` と `tetris-ts-learning-plan.md` を参照。
 
 作業拠点は WSL2 ネイティブファイルシステム上の `~/projects/ts-tetris`。

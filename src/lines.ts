@@ -20,7 +20,6 @@ export type LineClearResult = {
 //   - 揃っていない行だけを残す(揃った行を取り除く)にはどの配列メソッドが使えるか
 //   - 取り除いた行数ぶん、幅 board[0].length の空行を先頭に追加する
 export function clearFullRows(board: Board): LineClearResult {
-  // TODO(human)
   const filteredBoard: Board = board.filter((row) => row.some((item) => item === null));
   const clearedLineCount: LineClearResult["clearedLineCount"] = board.length - filteredBoard.length;
   const newLine: Board = [...Array(clearedLineCount)].map((_) => Array(board[0].length).fill(null));
@@ -35,7 +34,6 @@ export function clearFullRows(board: Board): LineClearResult {
 // 複数行同時消しほど1行あたりの単価が上がるボーナス設計が定番)。
 // 0行なら0点を返すこと。
 export function calculateScore(clearedLineCount: number): number {
-  // TODO(human)
   if (clearedLineCount === 0) return 0;
 
   const scoreByClearedLines = [40, 100, 300, 1200];
