@@ -70,7 +70,6 @@ export function move(board: Board, piece: ActivePiece, dx: number, dy: number): 
 //
 // TODO(human): 実装する。move を繰り返し使えばよい。
 export function hardDrop(board: Board, piece: ActivePiece): ActivePiece {
-  // TODO(human)
   let newPiece = piece;
   const tryMove = () => move(board, newPiece, 0, 1);
   while(true) {

@@ -3,21 +3,14 @@ import { calculateScore, clearFullRows, type LineClearResult } from "./lines";
 import type { Board, Cell } from "./types";
 
 describe("calculateScore", () => {
-  it("0行消去なら0点", () => {
-    expect(calculateScore(0)).toBe(0);
-  });
-
-  it("1行消去なら40点", () => {
-    expect(calculateScore(1)).toBe(40);
-  });
-  it("2行消去なら100点", () => {
-    expect(calculateScore(2)).toBe(100);
-  });
-  it("3行消去なら300点", () => {
-    expect(calculateScore(3)).toBe(300);
-  });
-  it("4行消去なら1200点", () => {
-    expect(calculateScore(4)).toBe(1200);
+  it.each([
+    [0, 0],
+    [1, 40],
+    [2, 100],
+    [3, 300],
+    [4, 1200],
+  ])("%i行消去なら%i点", (lines, score) => {
+    expect(calculateScore(lines)).toBe(score);
   });
 });
 
@@ -31,19 +24,6 @@ function makeBoard(rows: readonly boolean[]): Board {
 }
 
 describe("clearFullRows", () => {
-  // TODO(human): 以下のケースをそれぞれ it(...) で書く。
-  // 1. 揃った行が1つもない盤面 → clearedBoard は元と同じ内容、clearedLineCount は 0
-  // 2. 一番下の行だけ揃っている盤面(例: makeBoard([false, false, true])) →
-  //    clearedLineCount は 1、clearedBoard は「先頭に空行が1つ追加され、揃っていた行が消えた」形になる
-  //    (=makeBoard([false, false, false]) と同じ内容になるはず)
-  // 3. 複数行(例: 2行)が同時に揃っている盤面 → clearedLineCount がその行数と一致する
-  //
-  // ヒント: clearFullRows は { clearedBoard, clearedLineCount } を返すオブジェクトなので、
-  //   const result = clearFullRows(makeBoard([...]));
-  //   expect(result.clearedLineCount).toBe(...);
-  //   expect(result.clearedBoard).toEqual(makeBoard([...]));
-  // のように、2つのプロパティをそれぞれ検証する。
-  // (オブジェクトや配列の中身を比較するときは toBe ではなく toEqual を使う点に注意)
   it("揃った行が1つもない盤面ならclearedBoardは同じ内容､clearedLineCountは0", () => {
     const board = makeBoard([false]);
     const board1 = makeBoard([false, false, false]);
