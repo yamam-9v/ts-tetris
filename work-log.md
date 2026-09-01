@@ -386,3 +386,19 @@ Docker化に着手するタイミングで、`~/projects/ts-tetris` の最新状
   - `ReadonlyArray`などの`readonly`はTypeScriptのコンパイル時チェックに過ぎず、実行時にはJavaScriptの配列はミュータブルなままであること(`as any`で型チェックを迂回すれば書き換えられる)。
   - `toEqual`(内容比較)は「新しく作られた値か、既存の値を書き換えたものか」を区別できないという限界があること。
 - 次回やること: `sprites.ts` の `loadImage`/`loadAllSprites` のテストを書く(jsdom環境でのDOM APIテスト)。その後、第3マイルストーン ステップ9(状態遷移: ゲームオーバー/リスタート)に着手する。
+
+## 2026-09-01 (2)
+
+- マイルストーン / ステップ: (Vitestテストの続き。全純粋関数へのテスト完了)
+- やったこと:
+  - 「jsdom環境でのテストと今までのテストで違うところはあるか」との質問に、①ブラウザAPI依存の有無(純粋データ操作 vs DOM API)、②同期/非同期(Promiseを返す関数のテストでは`async`/`await`が要る)、③失敗ケースの書き方(`rejects`マッチャー)、の3点を説明。
+  - `sprites.ts` の `loadImage`/`loadAllSprites` のテストに着手する前に、jsdom環境で実際に `new Image()` が動くかをClaudeが検証。`environment: 'jsdom'` だけの設定では `onload`/`onerror` がどちらも発火せずタイムアウトすることが判明。`environmentOptions.jsdom.resources = 'usable'` も試したが解消せず、jsdomが `<img>` タグの実際の画像デコード自体をサポートしていないという既知の制限であることが分かった(設定変更は元に戻した)。
+  - 方針を「`Image` をテスト用のモック(`MockImage`)に差し替える」に変更。`src` に `"fail"` という文字列が含まれていたら `onerror`、それ以外なら `onload` を(`queueMicrotask`で非同期に)発火するモッククラスと、`vi.stubGlobal`/`vi.unstubAllGlobals` によるセットアップ(`beforeEach`/`afterEach`)をClaudeが用意。モックが正しく機能するかも仮実装で事前検証してから、学習者にTODOとして委ねた。
+  - `loadImage` の2ケース(正常系: `.src` プロパティの確認、異常系: `rejects.toThrow()`)と、`loadAllSprites` の1ケース(`SPRITE_PATHS` の全キーが結果オブジェクトに存在すること、`.sort()`してから`toEqual`で順序非依存に比較)を学習者が一発で正しく実装。全42ケースパス。
+  - これで計画していた全純粋関数(`calculateScore`, `clearFullRows`, `canPlace`, `lockPiece`, `rotate`, `move`, `hardDrop`, `loadImage`, `loadAllSprites`)へのVitestテストが完了。
+- 詰まった点(JS由来 / TS由来 / 環境由来):
+  - 環境由来: jsdomは`<img>`要素の実際の画像読み込み(デコード)をサポートしておらず、`Image`の`onload`/`onerror`が永久に発火しない。これは設定では回避できず、モック(テストダブル)への差し替えが必要だった。
+- 新しく理解した概念(本人の言葉ベースではなくClaude起点の説明が中心だったため要約):
+  - モック(テストダブル)の考え方: テスト対象が依存する不確実な外部要素(今回はブラウザのImage API)を、テストが完全にコントロールできる偽物に差し替えることで、対象のロジック自体を安定してテストできるようにする手法。
+  - `vi.stubGlobal`/`vi.unstubAllGlobals` によるグローバルオブジェクトの差し替えとクリーンアップ。
+- 次回やること: 第3マイルストーン ステップ9(状態遷移: ゲームオーバー/リスタート)に着手する。`GameState`(判別可能ユニオン)を実際に使い始め、`switch`の網羅チェックも活用する。
