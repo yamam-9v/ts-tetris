@@ -29,9 +29,9 @@ npm run dev
 **第2マイルストーン(遊べる)完了。**
 矢印キーで左右移動・回転・ソフトドロップ、スペースキーでハードドロップが効く。
 ピース画像は `src/sprites.ts` の `loadImage`/`loadAllSprites`(Promise化・`Promise.all`による並行読み込み)で `async`/`await` 読み込みしてから盤面が表示され、読み込み失敗時は画面にエラーメッセージが出る状態。
-Vitestを導入済み(`npm test` / `npm run test:watch`)。`calculateScore` / `clearFullRows` / `canPlace` / `lockPiece` にテストを実装。
-意図的なバグを使ったデバッグ体験(`console.log`、`beforeEach`によるテスト独立性の確保など)も実施。
-残りの純粋関数(`rotate`, `move`, `hardDrop`, `loadImage`, `loadAllSprites`)へのテストは次回。
+Vitestを導入済み(`npm test` / `npm run test:watch`)。`src/collision.ts` の全関数(`canPlace` / `lockPiece` / `rotate` / `move` / `hardDrop`)と `calculateScore` / `clearFullRows` にテストを実装(全39+8ケースパス)。
+意図的なバグを使ったデバッグ体験(`console.log`、`beforeEach`によるテスト独立性の確保、`toEqual`の限界など)も実施。
+残りは `sprites.ts` の `loadImage`/`loadAllSprites`(jsdom環境でのDOM APIテスト)。
 その後、第3マイルストーン ステップ9(状態遷移: ゲームオーバー/リスタート)に着手予定。
 学習計画にステップ10へのジェネリクス学習統合を追加済み(実装は未着手)。詳細は `work-log.md` と `tetris-ts-learning-plan.md` を参照。
 

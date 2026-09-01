@@ -9,7 +9,6 @@ import { PIECE_SHAPES, PIECE_BOX_SIZE } from "./pieces";
 // ヒント: boxSize=3 の枠で (0,0) は「左上」。時計回りに90度回すと「右上」、
 // つまり (2,0) に移動する。この対応関係から x, y それぞれの計算式を考えること。
 export function rotateOffset(offset: Offset, boxSize: number): Offset {
-  // TODO(human)
   const newOffset = {
     x: -offset.y + (boxSize - 1),
     y: offset.x
@@ -24,7 +23,6 @@ export function rotateOffset(offset: Offset, boxSize: number): Offset {
 // rotation 回だけ繰り返し適用した配列を返す実装を書く。
 // (rotation === 0 のときは回転前のまま返せばよい)
 export function getPieceShape(kind: PieceKind, rotation: 0 | 1 | 2 | 3): readonly Offset[] {
-  // TODO(human)
   let newOffset = PIECE_SHAPES[kind];
 
   if (rotation === 0) return newOffset;
