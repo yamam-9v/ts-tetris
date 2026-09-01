@@ -36,7 +36,7 @@
 | 第2 | 7. ライン消去とスコア | 完了 |
 | 第2 | 8. キー入力と落下速度調整 | 完了 |
 | 第2 | 8.5. 非同期処理(スプライト画像読み込み) | 完了(第2マイルストーン完了) |
-| 第3: 仕上げる | 9. 状態遷移 | 未着手 |
+| 第3: 仕上げる | 9. 状態遷移 | 完了 |
 | 第3 | 10. localStorage + unknown 検証 + ジェネリクス | 未着手 |
 | 第3 | 11. Dev Container 化 | 未着手 |
 | 第3 | 12. GitHub Actions で CI | 未着手 |
@@ -402,3 +402,31 @@ Docker化に着手するタイミングで、`~/projects/ts-tetris` の最新状
   - モック(テストダブル)の考え方: テスト対象が依存する不確実な外部要素(今回はブラウザのImage API)を、テストが完全にコントロールできる偽物に差し替えることで、対象のロジック自体を安定してテストできるようにする手法。
   - `vi.stubGlobal`/`vi.unstubAllGlobals` によるグローバルオブジェクトの差し替えとクリーンアップ。
 - 次回やること: 第3マイルストーン ステップ9(状態遷移: ゲームオーバー/リスタート)に着手する。`GameState`(判別可能ユニオン)を実際に使い始め、`switch`の網羅チェックも活用する。
+
+## 2026-09-02
+
+- マイルストーン / ステップ: 9. 状態遷移(ゲームオーバー/リスタート)(進行中)
+- やったこと:
+  - セッション開始時に `work-log.md` / `tetris-ts-learning-plan.md` を確認し、現状(第2マイルストーン完了、ステップ9未着手)を把握。`main.ts` を読み返し、`board`/`current`/`score` がバラバラのローカル変数で管理され、ゲームオーバー時は「盤面を空にしてリセットするだけ」の仮実装になっていることを確認。
+  - ステップ9の進め方として、まず`ready`/`playing`/`paused`/`gameover`全体の配線を一度に変えるのではなく、最初の一手としてステップ9の核心である「ゲームオーバー判定」を`GameState`(判別可能ユニオン)を組み立てる小さな純粋関数に切り出すことから着手する方針とした(残りのready→playing、playing↔paused、gameover→readyの配線は次回以降)。
+  - `src/state.ts` を新規作成。`spawnOrGameOver(board, newPiece, score): GameState`の型シグネチャと`TODO(human)`を設置し、学習者への実装依頼(Learn by Doing)を発行。`canPlace`の結果で`playing`バリアント(`board`/`current`/`score`を持つ)と`gameover`バリアント(`score`のみ)のどちらを返すかを分岐する内容。実装待ちの状態でセッション終了。
+- 詰まった点(JS由来 / TS由来 / 環境由来): なし
+- 新しく理解した型の概念: (該当なし。`spawnOrGameOver`の実装は次回セッションに持ち越し)
+- 次回やること:
+  - `spawnOrGameOver`の実装を確認し、`GameState`の組み立て方(バリアントごとに持つプロパティが違う点)を中心にフィードバックする。
+  - `main.ts`に`state: GameState`を導入し、`switch(state.kind)`による分岐(`ready`の待機画面、`playing`の既存ロジック、`paused`の一時停止、`gameover`の画面表示とリスタート)に置き換える配線を進める。`default`節での`satisfies never`による網羅チェックも組み込む。
+
+## 2026-09-02 (2)
+
+- マイルストーン / ステップ: 9. 状態遷移(ゲームオーバー/リスタート)(完了)
+- やったこと:
+  - `spawnOrGameOver`の実装(学習者が一発で正しく実装)を確認。ロジックは`canPlace`による早期リターンで`gameover`/`playing`を組み立てる正しい構造だった。`{ score: score }`という書き方に対し、プロパティ名と変数名が一致する場合の**プロパティショートハンド**(`{ score }`)をフィードバックし、学習者が修正。`TODO(human)`コメントの残骸はClaudeが整理。
+  - `main.ts`を`GameState`ベースに書き換え(Claudeが実装、機械的な配線として位置づけ)。`board`/`current`/`score`のバラバラな変数を`state: GameState`(`ready`/`playing`/`paused`/`gameover`)に統合。`loop`関数を`switch(state.kind)`で分岐し(各状態の描画、`playing`での自然落下・ロック・ライン消去・スコア加算・`spawnOrGameOver`呼び出し)、`default`節で`state satisfies never`による網羅チェックを設置。`keydown`ハンドラも`state.kind`に応じて分岐(`ready`/`gameover`でEnterキーによる開始・リスタート、`paused`とのPキートグル、`playing`中の既存の移動・回転・ドロップ操作)する形に配線。`lastFallTime`は`GameState`(ドメイン状態)に含めず、引き続き`main()`内のローカル変数(タイミング管理という実装詳細)として保持する設計とした。
+  - Playwrightで動作確認。`node_modules`にPlaywrightが見当たらなかったため一時的に`npm install --no-save playwright`でインストールし(`package.json`/`package-lock.json`は無変更)、`npx playwright install chromium`後、スクリプトでready→Enter→playing→P→paused→P→playing→(ハードドロップ連打で積み上げ)→gameover→Enter→ready(リスタート、新しい盤面・スコア0)の一連の遷移をスクリーンショットで確認。コンソールエラーなし。確認後、一時インストールしたPlaywrightパッケージとスクリプトは削除。
+  - `never`による網羅チェックを実際に体感する実験を実施。`types.ts`の`GameState`に仮のバリアント`{ kind: "countdown"; secondsLeft: number }`を追加して`tsc --noEmit`を実行し、16件のエラーが出ることを確認。本命は`loop`内`switch`の`default`節`state satisfies never`での1件(`TS1360`)で、残り15件は`keydown`ハンドラが`switch`ではなく`if`の早期リターン連鎖で書かれているため、TypeScriptに「ここでバリアントを使い切った」という保証がなく、`countdown`が型に残り続けたことによる副次的なエラーだと解説。実験後、仮のバリアントを削除して`tsc --noEmit`が通ることを再確認。
+- 詰まった点(JS由来 / TS由来 / 環境由来):
+  - 環境由来: 過去のセッションで導入したはずのPlaywright(`node_modules`)が今回の環境には存在せず、動作確認のたびに一時インストールが必要だった。
+- 新しく理解した型の概念(本人の言葉):
+  - 「判別可能ユニオンで状態遷移を実装する時、実装漏れがないようにneverで網羅チェックを行うと良い」
+  - 「プロパティ名と代入する変数名が一致している時、プロパティショートハンドという省略記法が使える ex) { score: score } → { score }」
+- 次回やること: 第3マイルストーン ステップ10(localStorage + unknown の検証 + ジェネリクス)に着手する。壊れたJSONを入れてもクラッシュしないこと、型ガードを引数に取る汎用関数`loadFromStorage<T>`を自力で定義することが完了条件。
