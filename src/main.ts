@@ -5,7 +5,14 @@ import { getPieceShape } from "./rotation";
 import { clearFullRows, calculateScore } from "./lines";
 import { loadAllSprites } from "./sprites";
 import { spawnOrGameOver } from "./state";
+import { loadFromStorage, isValidHighScore } from "./storage";
 import type { Board, ActivePiece, PieceKind, GameState } from "./types";
+
+const HIGH_SCORE_KEY = "tetris-high-score";
+
+function saveHighScore(score: number): void {
+  localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(score));
+}
 
 const BOARD_WIDTH = 12;
 const BOARD_HEIGHT = 20;
@@ -55,6 +62,7 @@ async function main(): Promise<void> {
 
   let state: GameState = { kind: "ready" };
   let lastFallTime = 0;
+  let highScore = loadFromStorage(HIGH_SCORE_KEY, isValidHighScore) ?? 0;
 
   function startGame(): GameState {
     return { kind: "playing", board: createEmptyBoard(), current: spawnPiece(), score: 0 };
@@ -95,7 +103,7 @@ async function main(): Promise<void> {
 
     switch (state.kind) {
       case "ready":
-        drawMessage(["Enterキーでスタート"]);
+        drawMessage(["Enterキーでスタート", `High Score: ${highScore}`]);
         break;
 
       case "playing": {
@@ -109,6 +117,11 @@ async function main(): Promise<void> {
             const { clearedBoard, clearedLineCount } = clearFullRows(locked);
             const newScore = state.score + calculateScore(clearedLineCount);
             state = spawnOrGameOver(clearedBoard, spawnPiece(), newScore);
+
+            if (state.kind === "gameover" && state.score > highScore) {
+              highScore = state.score;
+              saveHighScore(highScore);
+            }
           }
 
           lastFallTime = timestamp;
@@ -128,7 +141,12 @@ async function main(): Promise<void> {
         break;
 
       case "gameover":
-        drawMessage(["Game Over", `Score: ${state.score}`, "Enterキーでリスタート"]);
+        drawMessage([
+          "Game Over",
+          `Score: ${state.score}`,
+          `High Score: ${highScore}`,
+          "Enterキーでリスタート",
+        ]);
         break;
 
       default:

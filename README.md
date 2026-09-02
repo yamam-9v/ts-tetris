@@ -31,9 +31,10 @@ npm run dev
 ピース画像は `src/sprites.ts` の `loadImage`/`loadAllSprites`(Promise化・`Promise.all`による並行読み込み)で `async`/`await` 読み込みしてから盤面が表示され、読み込み失敗時は画面にエラーメッセージが出る状態。
 Vitestを導入し、全純粋関数(`canPlace` / `lockPiece` / `rotate` / `move` / `hardDrop` / `calculateScore` / `clearFullRows` / `loadImage` / `loadAllSprites`)にテストを実装(全42ケースパス)。
 意図的なバグを使ったデバッグ体験(`console.log`、`beforeEach`によるテスト独立性の確保、`toEqual`の限界、`Image`のモック化など)も実施。
-**第3マイルストーン ステップ9(状態遷移: ゲームオーバー/リスタート)完了。**
-`src/state.ts` の `spawnOrGameOver` と `main.ts` の `GameState`(`ready`/`playing`/`paused`/`gameover`)導入により、Enterキーでスタート、Pキーで一時停止/再開、積み上がったらゲームオーバー、Enterキーでリスタートという一連の状態遷移が動く状態。`switch` の `default` 節での `satisfies never` による網羅チェックも導入済み。
-次は第3マイルストーン ステップ10(localStorage + unknown の検証 + ジェネリクス)。詳細は `work-log.md` と `tetris-ts-learning-plan.md` を参照。
+**第3マイルストーン ステップ10(localStorage + unknown の検証 + ジェネリクス)完了。**
+`src/state.ts` の `spawnOrGameOver` と `main.ts` の `GameState`(`ready`/`playing`/`paused`/`gameover`)導入により、Enterキーでスタート、Pキーで一時停止/再開、積み上がったらゲームオーバー、Enterキーでリスタートという一連の状態遷移が動く状態(`satisfies never` による網羅チェックも導入済み)。
+`src/storage.ts` の `isValidHighScore`(型述語による型ガード)と `loadFromStorage<T>`(自作のジェネリック関数)により、ハイスコアを `localStorage` に保存・読み込みし、壊れたJSONや不正な型が入っていてもクラッシュせず `0` にフォールバックする状態。
+次は第3マイルストーン ステップ11(Dev Container化)。詳細は `work-log.md` と `tetris-ts-learning-plan.md` を参照。
 
 作業拠点は WSL2 ネイティブファイルシステム上の `~/projects/ts-tetris`。
 (Windows 側 `/mnt/d/.../ts-tetris` は第3マイルストーンの Dev Container 化用に別途保持)
