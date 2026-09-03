@@ -1,0 +1,14 @@
+{
+  "name": "tetris-ts",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "mounts": [
+    "source=tetris-ts-node_modules,target=/workspace/node_modules,type=volume"
+  ],
+  "containerEnv": {
+    "DEVCONTAINER": "true"
+  },
+  "forwardPorts": [5173],
+  "postCreateCommand": "sudo chown node:node /workspace/node_modules && npm install"
+}

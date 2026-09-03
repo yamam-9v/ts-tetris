@@ -38,7 +38,7 @@
 | 第2 | 8.5. 非同期処理(スプライト画像読み込み) | 完了(第2マイルストーン完了) |
 | 第3: 仕上げる | 9. 状態遷移 | 完了 |
 | 第3 | 10. localStorage + unknown 検証 + ジェネリクス | 完了 |
-| 第3 | 11. Dev Container 化 | 未着手 |
+| 第3 | 11. Dev Container 化 | 完了 |
 | 第3 | 12. GitHub Actions で CI | 未着手 |
 
 ---
@@ -451,3 +451,40 @@ Docker化に着手するタイミングで、`~/projects/ts-tetris` の最新状
   - 「try-catch文のtryブロックで新たにErrorをThrowすると意図せずcatchブロックに移行してしまう可能性があるため注意」
   - 「any値を返す関数は型チェックを素通りする危険性があるためunknownなどで型注釈しておく」
 - 次回やること: 第3マイルストーン ステップ11(Dev Container化)に着手する。計画書4.2の既知の落とし穴(`node_modules`をバインドマウントに置かない、`server.watch.usePolling`でのファイル監視回避、`vite --host`、`forwardPorts`への5173追加)に先回りして対処する。
+
+## 2026-09-03
+
+- マイルストーン / ステップ: 11. Dev Container 化(設定完了、VS Codeでの実機確認待ち)
+- やったこと:
+  - セッション開始時に `work-log.md` / `tetris-ts-learning-plan.md` を確認し、現状(ステップ10完了、ステップ11未着手)を把握。
+  - 以前保留していた「ステップ11の作業拠点を `~/projects/ts-tetris`(WSL2ネイティブ)にするか `/mnt/d/.../ts-tetris` にするか」をユーザーに確認し、計画書4.2の落とし穴(Windows側バインドマウントのI/O遅延)を避けるため WSL2ネイティブ側継続で決定。
+  - Dev Container化は計画書2.2節の「Claudeが書いてよいもの(設定ファイル)」に該当するため、`TODO(human)`は設置せずClaudeが実装。
+  - `.devcontainer/devcontainer.json` を新規作成。ベースイメージは計画書の参考どおり `mcr.microsoft.com/devcontainers/typescript-node:22`。`node_modules`をバインドマウントに置かない対策として、`mounts`で名前付きボリューム(`tetris-ts-node_modules`)を`/workspace/node_modules`にサブマウントで重ねる構成にした。`forwardPorts: [5173]`も設定。
+  - `vite.config.js`に、`DEVCONTAINER`環境変数(`containerEnv`で設定)が立っている場合のみ`server.watch.usePolling`を有効化する分岐を追加(WSL2ネイティブでの直接開発時にはポーリングを持ち込まない設計)。なお`vite --host`相当(`server.host: true`)は既存設定で対応済みだったため変更不要だった。
+  - `@devcontainers/cli`を`npx --yes`で一時的に使い(グローバルインストールなし)、実際にコンテナをビルド・起動して検証。
+    1. 初回`up`で`npm install`が`EACCES`で失敗。名前付きボリュームは初回作成時に`root`所有になり、`typescript-node`イメージの既定ユーザー`node`(非root)から書き込めないという、計画書に無かった落とし穴を発見。ボリュームを一旦削除し、`postCreateCommand`を`sudo chown node:node /workspace/node_modules && npm install`に修正して解消。
+    2. 再度`up`で`npm install`成功(83パッケージ)。`npm run typecheck`(`tsc --noEmit`)、`npm test`(vitest、全42ケース)がコンテナ内で成功することを確認。
+    3. `npm run dev`をバックグラウンドで起動し、コンテナ内部から`curl`で200 OKを確認。ホストの`localhost:5173`からは接続できなかったが、原因は`devcontainer up` CLIが`docker run`時に`-p`(ポート公開)を付けないため(`forwardPorts`はVS Code拡張機能がSSH越しにトンネルする仕組みであり、CLI単体の制約と判明)。実運用(VS Code経由)では問題にならない。
+    4. ホスト側から`src/main.ts`に1行追記し、コンテナ内Viteのログに`page reload src/main.ts`が出ることを確認。`usePolling`によりバインドマウント越しのinotify不達を正しく回避できていることを実証。追記は`git checkout --`で元に戻した。
+    5. 検証用に起動したコンテナは`docker rm -f`で削除。`tetris-ts-node_modules`ボリュームは今後の実運用での再利用のため残した。
+  - 検証中、コンテナ内npm(v10.9.8)がホストの`package-lock.json`(npm v11系で生成、`libc`フィールドを含む)を古い形式で書き換える副作用が発生していることに気づき、`git checkout -- package-lock.json`で破棄して復元。
+  - `README.md`の「## 現在の状態」をステップ11の状況(設定完了・VS Code実機確認待ち)に更新。「作業拠点」の記載も、`/mnt/d`側を別途保持する方針から、WSL2ネイティブ側継続の決定に合わせて更新。
+- 詰まった点(JS由来 / TS由来 / 環境由来):
+  - 環境由来: 名前付きボリュームの初期所有者が`root`になり、非rootのコンテナユーザーから書き込めない(`EACCES`)。`postCreateCommand`内での`sudo chown`が定石。
+  - 環境由来: `devcontainer up` CLI単体では`forwardPorts`が実際のDockerポート公開(`-p`)に反映されない。VS Code拡張機能を使う実運用では拡張機能側がトンネリングするため問題にならないが、CLI単体での検証時の制約として要注意。
+  - 環境由来: バインドマウントはファイル内容を双方向に共有するため、コンテナ内のツール(異なるバージョンのnpm)がホスト側ファイル(`package-lock.json`)に意図しない副作用を及ぼしうる。
+- 新しく理解した型の概念: (該当なし。今回は環境構築・検証が主眼)
+- 次回やること:
+  - ユーザーがVS Codeで「Reopen in Container」を実行し、①ブラウザで`localhost:5173`が開けること、②`.ts`ファイルで補完(IntelliSense)が効くこと、の2点を実機確認する。確認が取れ次第ステップ11を完了とする。
+  - その後、第3マイルストーン ステップ12(GitHub Actions で CI)に着手する。`tsc --noEmit`と`vitest run`を独立ステップとして回すワークフローを用意する。コンテナ内npmとCI側npmのバージョン差による`package-lock.json`書き換えの副作用にも注意する。
+
+## 2026-09-03 (2)
+
+- マイルストーン / ステップ: 11. Dev Container 化(完了、第3マイルストーン ステップ11完了)
+- やったこと:
+  - ユーザーがVS Codeで「Reopen in Container」を実行し、補完(IntelliSense)・シンタックスハイライトが効くことを実機確認。CLI検証(前回セッション)と合わせてステップ11の完了条件(コンテナ内でHMRが動き、補完も効く)を満たした。
+  - ユーザーからの質問「`.devcontainer`(`devcontainer.json`)とDockerfile、docker-compose.ymlの違いは何か」に回答。Dockerfileはイメージの作り方(レシピ)、docker-compose.ymlは複数コンテナを協調動作させる構成ファイル、devcontainer.jsonはコンテナ定義(`image`/`build.dockerfile`/`dockerComposeFile`のいずれか1つを参照)を土台に、エディタ側の開発体験(拡張機能・ポート転送・`postCreateCommand`)を追加するメタ設定、という役割の違いを整理して説明。今回のプロジェクトは既製イメージ(`typescript-node:22`)を`image`で直接指定するシンプルな構成のため、Dockerfileもdocker-compose.ymlも使っていない点を確認した。
+- 詰まった点(JS由来 / TS由来 / 環境由来): なし
+- 新しく理解した概念(本人の言葉ベースではなくClaude起点の説明が中心だったため要約):
+  - Dockerfile(イメージの作り方) / docker-compose.yml(複数コンテナの協調) / devcontainer.json(エディタ向けメタ設定、前2つのどれかを参照する)という役割分担。
+- 次回やること: 第3マイルストーン ステップ12(GitHub Actions で CI)に着手する。`tsc --noEmit`と`vitest run`を独立ステップとして回すワークフローを用意する。コンテナ内npmとCI側npmのバージョン差による`package-lock.json`書き換えの副作用にも注意する。

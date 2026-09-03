@@ -34,7 +34,8 @@ Vitestを導入し、全純粋関数(`canPlace` / `lockPiece` / `rotate` / `move
 **第3マイルストーン ステップ10(localStorage + unknown の検証 + ジェネリクス)完了。**
 `src/state.ts` の `spawnOrGameOver` と `main.ts` の `GameState`(`ready`/`playing`/`paused`/`gameover`)導入により、Enterキーでスタート、Pキーで一時停止/再開、積み上がったらゲームオーバー、Enterキーでリスタートという一連の状態遷移が動く状態(`satisfies never` による網羅チェックも導入済み)。
 `src/storage.ts` の `isValidHighScore`(型述語による型ガード)と `loadFromStorage<T>`(自作のジェネリック関数)により、ハイスコアを `localStorage` に保存・読み込みし、壊れたJSONや不正な型が入っていてもクラッシュせず `0` にフォールバックする状態。
-次は第3マイルストーン ステップ11(Dev Container化)。詳細は `work-log.md` と `tetris-ts-learning-plan.md` を参照。
+**第3マイルストーン ステップ11(Dev Container化)完了。**
+`.devcontainer/devcontainer.json`(`node_modules` を名前付きボリュームに分離、`postCreateCommand` での所有権修正込み)と `vite.config.js`(`DEVCONTAINER` 環境変数でのポーリング監視切り替え)を追加。`@devcontainers/cli` での検証(`npm install` / `tsc --noEmit` / `vitest run` 全42ケース / Vite起動 / HMR)に加え、VS Codeの「Reopen in Container」での補完(IntelliSense)・シンタックスハイライトも実機確認済み。
+次は第3マイルストーン ステップ12(GitHub Actions で CI)。詳細は `work-log.md` と `tetris-ts-learning-plan.md` を参照。
 
-作業拠点は WSL2 ネイティブファイルシステム上の `~/projects/ts-tetris`。
-(Windows 側 `/mnt/d/.../ts-tetris` は第3マイルストーンの Dev Container 化用に別途保持)
+作業拠点は WSL2 ネイティブファイルシステム上の `~/projects/ts-tetris`(Dev Container化もこの拠点上で行う方針に決定)。
