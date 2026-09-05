@@ -43,7 +43,7 @@
 | 第4: 開発ワークフローの強化 | 13. ESLint + Prettier 導入 | 完了 |
 | 第4 | 14. PRベースの開発フローを一度体験する | 完了(branch protectionの実際の強制確認はステップ15公開後に持ち越し) |
 | 第4 | 15. リポジトリを公開する | 完了 |
-| 第4 | 16. GitHub Pages にデプロイする | 未着手(計画書のみ追加) |
+| 第4 | 16. GitHub Pages にデプロイする | 完了 |
 | 第4 | 17. `noUncheckedIndexedAccess` の導入 | 未着手(計画書のみ追加) |
 
 ---
@@ -59,9 +59,10 @@
 - `.devcontainer/` による Dev Container 化(VS Codeでの補完・HMR動作確認済み)。
 - GitHub Actions で `tsc --noEmit` / `eslint` / `prettier --check` / `vitest run` を独立ステップとして実行するCIが稼働中。
 - ESLint(Flat Config、型情報ベースの `recommendedTypeChecked` を有効化)と Prettier を導入済み。`npm run typecheck` / `lint` / `lint:fix` / `format` / `format:fix` / `test` で実行可能。
-- PRベース(作業ブランチ→PR作成→CI緑→マージ)の開発フローとbranch protectionを導入済み(Privateリポジトリのため実際の強制はステップ15の公開後に有効になる見込み)。
+- PRベース(作業ブランチ→PR作成→CI緑→マージ)の開発フローとbranch protection(「Require a pull request before merging」「Do not allow bypassing」も有効化済み)を導入。実地検証済みで、CIが失敗するPRはマージがブロックされ、mainへの直接pushも拒否される。
+- リポジトリはPublic化済み。GitHub Pagesで公開中: https://yamam-9v.github.io/ts-tetris/ (`vite.config.js`の`base`設定と、`import.meta.env.BASE_URL`を使ったスプライト画像パスの組み立てにより、サブパス配信でも正しく動作することを実機確認済み)。
 
-次のアクションは、第4マイルストーン ステップ15(リポジトリを公開する)以降に進むこと。
+次のアクションは、第4マイルストーン ステップ17(`noUncheckedIndexedAccess`の導入)に進むかどうかの相談。
 作業拠点は WSL2 ネイティブファイルシステム上の `~/projects/ts-tetris`。
 
 ---
@@ -663,3 +664,27 @@ Docker化に着手するタイミングで、`~/projects/ts-tetris` の最新状
 - 詰まった点(JS由来 / TS由来 / 環境由来): なし。
 - 新しく理解した概念: 設定画面の表示(警告が消えた等)だけでは「設定が保存されているか」しか分からず、「実際に効くか」を確かめるには、わざと失敗する変更でPRを作りマージボタンの挙動を目で見る、という実地検証が必要という考え方。
 - 次回やること: 第4マイルストーン ステップ16(GitHub Pagesにデプロイする)に着手する。`vite.config.js` の `base` をリポジトリ名に合わせ、deploy用ワークフローを追加し、スプライト画像(`public/sprites/*.svg`)のサブパス配信も確認する。
+
+## 2026-09-06
+
+- マイルストーン / ステップ: 16. GitHub Pagesにデプロイする(完了)
+- やったこと:
+  - 着手前に `src/sprites.ts` の `SPRITE_PATHS` が `"/sprites/I.svg"` のような絶対パスでハードコードされていることを発見。GitHub Pagesのようなサブパス配信(`https://yamam-9v.github.io/ts-tetris/`)では、絶対パスは「ドメインのルート」を指してしまい404になる、という計画書が事前に警告していた落とし穴そのものだったため、先にユーザーに説明。この修正はロジックの設計判断というより「Viteの`base`設定の理解」に近いためClaudeが実装する方針で合意。
+  - `vite.config.js` に `base: "/ts-tetris/"` を追加。`src/sprites.ts` の `SPRITE_PATHS` を、Viteが提供する `import.meta.env.BASE_URL`(`base`の値が入る)からパスを組み立てる形に修正し、絶対パスのハードコードを解消。
+  - `npm run build` でローカル検証。`dist/index.html` の `<script>`/`<link>` が `/ts-tetris/assets/...` に、ビルド後JS内の `SPRITE_PATHS` も `ts-tetris/sprites/I.svg` のように正しく `base` を反映していることを確認(確認後 `dist/` は削除)。
+  - `.github/workflows/deploy.yml` を新規作成(`ci.yml`とは独立したワークフロー)。mainへのpush時に `npm run build` → `actions/upload-pages-artifact` → `actions/deploy-pages` でPagesへ自動デプロイする内容。`python3 -c "import yaml; ..."` でYAML構文を確認、既存の `typecheck`/`lint`/`format`/`test` も通ることを確認してからコミット。
+  - branch protection有効化後、初めて完全にPRフローで進行(`feat/github-pages-deploy` ブランチ→PR→CI緑→マージ)。
+  - GitHub Pages機能自体の有効化(Settings → Pages → Source: GitHub Actions)をユーザーが実施。マージ後 `deploy.yml` が走り、実際にデプロイされたことをユーザーが確認。
+  - Playwright(`npm install --no-save`で一時導入、確認後アンインストール。`package.json`/`package-lock.json`は無変更)で公開URL(`https://yamam-9v.github.io/ts-tetris/`)に実際にアクセスし検証。コンソールエラー・失敗リクエスト(4xx/5xx)ともになし。ready画面(`Enterキーでスタート`、`High Score: 0`)、Enterキー押下後のplaying画面(Tピースのスプライトが紫色で正しく描画)をスクリーンショットで確認し、スプライト画像のサブパス配信が実際に機能していることを実証。
+- 詰まった点(JS由来 / TS由来 / 環境由来):
+  - TS由来/設計理解: `import.meta.env.BASE_URL` を使わずコード内に絶対パスをハードコードすると、`vite.config.js` の `base` 設定を変えてもコード側は追従しない(Viteの `base` はHTML内の `<script>`/`<link>` や `import`/`new URL()` 経由のアセット解決には自動的に反映されるが、文字列リテラルとして書かれたパスまでは書き換えない)。
+- 新しく理解した概念: (該当なし。今回は環境・ビルド設定の理解が主眼)
+- 次回やること: 全12ステップ+第4マイルストーンのステップ13〜16が完了。残るは第4マイルストーンのフェーズ3、ステップ17(`noUncheckedIndexedAccess`の導入)。着手するかどうかユーザーと相談する。
+
+## 2026-09-06 (2)
+
+- マイルストーン / ステップ: (ステップ16完了後のREADME仕上げ)
+- やったこと: README.mdの「## デモ」「## スクリーンショット」(ともに「準備中」のままだった)を、実際に確認できた公開URL(`https://yamam-9v.github.io/ts-tetris/`)と、動作確認時にPlaywrightで撮影したplaying画面のスクリーンショット(`docs/screenshot.png`として追加)で埋めた。
+- 詰まった点(JS由来 / TS由来 / 環境由来): なし。
+- 新しく理解した概念: (該当なし)
+- 次回やること: ステップ17(`noUncheckedIndexedAccess`の導入)に着手するかどうかユーザーと相談する。
