@@ -41,7 +41,7 @@
 | 第3 | 11. Dev Container 化 | 完了 |
 | 第3 | 12. GitHub Actions で CI | 完了(第3マイルストーン完了、全ステップ完了) |
 | 第4: 開発ワークフローの強化 | 13. ESLint + Prettier 導入 | 完了 |
-| 第4 | 14. PRベースの開発フローを一度体験する | 未着手(計画書のみ追加) |
+| 第4 | 14. PRベースの開発フローを一度体験する | 完了(branch protectionの実際の強制確認はステップ15公開後に持ち越し) |
 | 第4 | 15. リポジトリを公開する | 未着手(計画書のみ追加) |
 | 第4 | 16. GitHub Pages にデプロイする | 未着手(計画書のみ追加) |
 | 第4 | 17. `noUncheckedIndexedAccess` の導入 | 未着手(計画書のみ追加) |
@@ -581,3 +581,20 @@ Docker化に着手するタイミングで、`~/projects/ts-tetris` の最新状
   - `npx`はローカルのバイナリを直接叩くだけで`package.json`の`scripts`を経由しない一方、`npm run`は`scripts`定義を実行するため、CIとローカルのコマンドを1箇所(`package.json`)に集約できる。
   - コマンド名の対称性(オプションなし=安全なデフォルト、修飾語付き=破壊的な操作)を意図的に揃えることで、誤操作への耐性が上がる、という設計判断をユーザー自身が指摘・実施した。
 - 次回やること: 第4マイルストーン ステップ14(PRベースの開発フローを一度体験する)に着手する。
+
+## 2026-09-05 (4)
+
+- マイルストーン / ステップ: 14. PRベースの開発フローを一度体験する(完了。branch protectionの実際の強制確認はステップ15〈リポジトリ公開〉後に持ち越し)
+- やったこと:
+  - `gh` CLIの有無を確認したところ未導入(計画書の記載通り)。PR作成・マージはGitHubの画面からユーザーが行う方針とした。
+  - Claudeが作業ブランチ `docs/update-tech-stack` を作成し、README.mdの技術スタック欄にESLint/Prettier/Dev Container/GitHub Actionsを追記(ステップ13時点で反映漏れだった箇所)してコミット・プッシュ。PRフロー体験のための小さな題材として位置づけた。
+  - ユーザーがGitHubの画面でPRを作成 → CIが走って緑になることを確認 → 「Merge pull request」でマージ、という一連の流れを実際に体験。
+  - マージ後、ローカルで `git checkout main && git pull` して最新化し、ローカルの作業ブランチを削除して後片付け。
+  - branch protectionの設定手順(Settings → Branches → Add rule → `main` → Require status checks to pass before merging、CIのジョブ名`test`を選択)をClaudeが説明し、ユーザーがGitHubの画面から実際に設定。
+  - 設定完了後、GitHubから「Your protected branch rules...won't be enforced on this private repository until you move to a GitHub Team or Enterprise organization account.」という警告が表示され、ユーザーから質問があった。GitHub Freeプラン(個人アカウント)では、Publicリポジトリなら branch protection rule が無料で完全に機能するが、Privateリポジトリの場合は一部のルール(required status checksなど)がTeam/Enterpriseプランでないと実際には強制されない、という仕様であることを説明。計画書の次のステップ15(リポジトリ公開)を終えれば、今回保存した設定がそのままPublicリポジトリ上で有効になる見込みのため、実際に強制されるかどうかの確認はステップ15後に持ち越す方針でユーザーと合意した。
+- 詰まった点(JS由来 / TS由来 / 環境由来):
+  - 環境由来: GitHub Freeプランの個人アカウントでは、Privateリポジトリの場合 branch protection rule の一部(required status checks等)がTeam/Enterpriseプランでないと実際には強制されない。設定自体は保存されるため、Publicにした時点で有効になる見込み。
+- 新しく理解した概念(本人の言葉):
+  - 「PRフローはmainブランチを汚さないために行う」
+  - 「branch protectionはPRフローと合わせて特定のブランチを保護するために行う」
+- 次回やること: 第4マイルストーン ステップ15(リポジトリを公開する)に着手する。公開前のセキュリティチェック(秘匿情報の有無)をClaudeが実施し、README本文は学習者が自分の言葉で書く(Claudeは構成案とガイドのみ提示)。公開後、branch protectionが実際に強制されるようになったかも確認する。
