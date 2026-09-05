@@ -42,9 +42,27 @@
 | 第3 | 12. GitHub Actions で CI | 完了(第3マイルストーン完了、全ステップ完了) |
 | 第4: 開発ワークフローの強化 | 13. ESLint + Prettier 導入 | 完了 |
 | 第4 | 14. PRベースの開発フローを一度体験する | 完了(branch protectionの実際の強制確認はステップ15公開後に持ち越し) |
-| 第4 | 15. リポジトリを公開する | 未着手(計画書のみ追加) |
+| 第4 | 15. リポジトリを公開する | 進行中(セキュリティチェック・README整備は完了、実際の公開はこれから) |
 | 第4 | 16. GitHub Pages にデプロイする | 未着手(計画書のみ追加) |
 | 第4 | 17. `noUncheckedIndexedAccess` の導入 | 未着手(計画書のみ追加) |
+
+---
+
+## 現在の状態(最新状態を上書きで更新)
+
+- 盤面・ピース・ゲーム状態は判別可能ユニオンなどで型付けされており、`any` は不使用。
+- 矢印キーで左右移動・回転・ソフトドロップ、スペースキーでハードドロップ。ライン消去・スコア加算も動作。
+- ピース画像は `src/sprites.ts` の `loadImage`/`loadAllSprites`(`async`/`await`、`Promise.all` による並行読み込み)で読み込んでから表示。失敗時は画面にエラーメッセージを表示。
+- `GameState`(`ready`/`playing`/`paused`/`gameover`)による状態遷移。Enterキーで開始/リスタート、Pキーで一時停止。
+- ハイスコアは `localStorage` に保存。`src/storage.ts` の `isValidHighScore`(型ガード)と自作ジェネリック関数 `loadFromStorage<T>` により、壊れたJSONや不正な型が入っていてもクラッシュしない。
+- Vitest で全純粋関数(`canPlace` / `lockPiece` / `rotate` / `move` / `hardDrop` / `calculateScore` / `clearFullRows` / `loadImage` / `loadAllSprites`)をテスト(全42ケースパス)。
+- `.devcontainer/` による Dev Container 化(VS Codeでの補完・HMR動作確認済み)。
+- GitHub Actions で `tsc --noEmit` / `eslint` / `prettier --check` / `vitest run` を独立ステップとして実行するCIが稼働中。
+- ESLint(Flat Config、型情報ベースの `recommendedTypeChecked` を有効化)と Prettier を導入済み。`npm run typecheck` / `lint` / `lint:fix` / `format` / `format:fix` / `test` で実行可能。
+- PRベース(作業ブランチ→PR作成→CI緑→マージ)の開発フローとbranch protectionを導入済み(Privateリポジトリのため実際の強制はステップ15の公開後に有効になる見込み)。
+
+次のアクションは、第4マイルストーン ステップ15(リポジトリを公開する)以降に進むこと。
+作業拠点は WSL2 ネイティブファイルシステム上の `~/projects/ts-tetris`。
 
 ---
 
@@ -598,3 +616,25 @@ Docker化に着手するタイミングで、`~/projects/ts-tetris` の最新状
   - 「PRフローはmainブランチを汚さないために行う」
   - 「branch protectionはPRフローと合わせて特定のブランチを保護するために行う」
 - 次回やること: 第4マイルストーン ステップ15(リポジトリを公開する)に着手する。公開前のセキュリティチェック(秘匿情報の有無)をClaudeが実施し、README本文は学習者が自分の言葉で書く(Claudeは構成案とガイドのみ提示)。公開後、branch protectionが実際に強制されるようになったかも確認する。
+
+## 2026-09-05 (5)
+
+- マイルストーン / ステップ: 15. リポジトリを公開する(進行中。セキュリティチェック・README整備が完了、実際のPublic化はこれから)
+- やったこと:
+  - 公開前のセキュリティチェックをClaudeが実施。`.env`/秘密鍵/トークンなど機微なファイルのコミットがないこと、work-log.md内の過去の`/mnt/d/...`パス記述が既に`<user>`というプレースホルダーで匿名化済みであること(過去のコミットログにも「ユーザー名をぼかした」という記録あり)を確認。
+  - 一方、全35件のコミットの`Author`情報に実メールアドレス(`yamam.dev@gmail.com`)が記録されていることを発見し報告。ユーザーから「他の公開リポジトリで既に露出していると思うので、今からprivate化していく」との方針を受け、GitHubの`Settings → Emails`で「Keep my email address private」を有効化してもらい、表示されたnoreplyアドレス(`209576382+yamam-9v@users.noreply.github.com`)をユーザー自身が`git config --global user.email`に設定。過去の35件のコミットは書き換えず、今後のコミットから適用する方針で合意(noreply化のデメリット: 過去のコミットには効かない、正しいID付き形式でないとGitHubアカウントに紐付かない、`--global`/ローカルの適用範囲に注意、の3点を事前に説明)。
+  - README.mdをポートフォリオとして機能する内容に再構成。構成案(概要/デモ/スクリーンショット/技術スタック/設計上のこだわり/セットアップ/学習プロセスについて)をClaudeが提示し、本文は学習者が執筆。
+  - 学習者が書いた本文をClaudeがレビューし、以下を指摘: ①`json.parse`の誤字(正しくは`JSON.parse`)→学習者の了承を得てClaudeが修正、②「設計上のこだわり」に型設計と開発ワークフローという性質の違う内容が混在→学習者が`### 型設計`/`### 開発ワークフロー`に見出しを分割、③CIの説明が「テストを行う」のみで型チェック/lint/フォーマットチェックを含んでいない不正確な表現→学習者が修正しつつ「lintだけ英単語で浮いている」ことに気づき質問、④branch protectionの記述が現状(Privateリポジトリ)の実態と食い違う可能性→学習者は「実際に機能することを確認してから追加する」方針とし、この時点では記述を残したまま(実際の削除・確認はまだ)。
+  - ③について、(a)「Lint」と英語のまま大文字化、(b)実際のnpmスクリプト名(`typecheck`/`lint`/`format`/`test`)でコード表記に統一、(c)「静的解析」という日本語に置き換え、の3案を提示。学習者は(b)を選択し、Claudeが「`typecheck` / `lint` / `format` / `test` を自動実行するようにした」という表現に修正。
+  - ④について、ユーザーから「後で追加することにしただけで、まだ実際の確認はしていない」との回答を受け、事実未確認の記述をREADMEから一旦削除(Public化後、実際にbranch protectionが機能することを確認してから改めて追記する方針)。
+  - バッジをREADMEに追加。CI(GitHub Actionsのワークフローバッジ)、TypeScript、Vite、続けてユーザーの依頼で技術スタック内の残り(Vitest/ESLint/Prettier)も追加。Canvas 2D API(ブラウザ標準機能でバッジ対象外)、Dev Container(対応する公式ロゴなし)、GitHub Actions(既にCI実行結果バッジで代替済み)の3つは対象外と判断。
+  - バッジの配置について学習者から「タイトル直下のままでよいか、技術スタック見出しに移すべきか、第1レベル見出しに書くことがない」との相談があり、「CIステータスバッジ(プロジェクトの状態)」と「技術選定バッジ(TypeScript/Vite等)」は性質が違うため、前者はタイトル直下、後者は`## 技術スタック`見出し内に置くのが一般的な慣習であることを説明。学習者の判断で技術系バッジを`## 技術スタック`直下に移動し、タイトル直下はCIバッジのみに整理。
+  - README.mdにあった「## 現在の状態」セクション(進捗の機能一覧)を削除し、`work-log.md`の進捗サマリー表の直後に「## 現在の状態(最新状態を上書きで更新)」として新設・移行。README.mdは`work-log.md`への1行リンクのみに簡潔化(ユーザー依頼)。
+  - Stop hook(`.claude/hooks/worklog-stop-check.sh`)を、README.mdのチェックを外し`work-log.md`のみを見るように調整(ユーザー依頼、「現在の状態」の移行に合わせて)。`bash -n`で構文チェック後、テスト用session_idで3パターン(初回=許可・marker作成、work-log.md未更新=block、mtime更新後=許可)を模擬実行して動作確認し、テスト用の状態ファイルはクリーンアップ済み。
+- 詰まった点(JS由来 / TS由来 / 環境由来): なし(ドキュメント設計・Git運用・GitHubの仕様理解が中心)。
+- 新しく理解した概念(本人の言葉ベースではなく、ユーザー主導の設計判断が中心だったため要約):
+  - コミットのAuthorメールアドレスは、GitHubのnoreplyアドレスに切り替えても過去のコミット履歴には遡って適用されない、という制約を理解した上で、今後のコミットから対応する方針を選んだ。
+  - READMEのバッジは「プロジェクトの状態を示すもの」と「技術選定を示すもの」で性質が違い、配置を分けた方が意味的にまとまる、という設計判断を自分で行った。
+  - コマンド表記の英語/日本語混在に気づき、実際のnpmスクリプト名でコード表記に統一するという解決策を選んだ。
+  - 事実未確認の記述はいったん外し、確認が取れてから書く、という進め方を実践した(branch protectionの記述)。
+- 次回やること: 実際にリポジトリをGitHubの画面からPublicに変更する(Settings → General → Danger Zone → Change visibility)。Public化後、branch protectionが実際に機能する(CIが通らないとマージできない)ことを確認し、README.mdにその旨を書き戻す。デモURL・スクリーンショットはステップ16(GitHub Pagesへのデプロイ)後に追加する。

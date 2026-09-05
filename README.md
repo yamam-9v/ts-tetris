@@ -1,11 +1,27 @@
 # ts-tetris
 
-TypeScript を身につけることを目的とした学習プロジェクト。動くテトリスはその副産物。
+[![CI](https://github.com/yamam-9v/ts-tetris/actions/workflows/ci.yml/badge.svg)](https://github.com/yamam-9v/ts-tetris/actions/workflows/ci.yml)
 
-- 詳細な方針・スコープ・コーディング規約: [`tetris-ts-learning-plan.md`](./tetris-ts-learning-plan.md)
-- 進捗ログ: [`work-log.md`](./work-log.md)
+## 概要
+
+TypeScript を身につけることを目的とした学習プロジェクト  
+動くテトリスはその副産物  
+
+## デモ
+
+準備中
+
+## スクリーンショット
+
+準備中
 
 ## 技術スタック
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![ESLint](https://img.shields.io/badge/ESLint-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/)
+[![Prettier](https://img.shields.io/badge/Prettier-F7B93E?logo=prettier&logoColor=black)](https://prettier.io/)
 
 - TypeScript(`strict: true`)
 - Vite(`vanilla-ts` テンプレート)
@@ -14,6 +30,19 @@ TypeScript を身につけることを目的とした学習プロジェクト。
 - ESLint(Flat Config、型情報ベースの `recommendedTypeChecked`)/ Prettier
 - Dev Container
 - GitHub Actions(CI)
+
+## 設計上のこだわり
+
+### 型設計
+
+- 判別可能ユニオンを用いてGameStateを表現することで､バリアントごとに異なるプロパティを持たせ､neverで網羅チェックを出来るようにした
+- テストをしやすくするため､ロジックを描画から切り離し純粋関数にした
+- localStorageからハイスコアを取得する際､JSON.parseからunknown型として受け取り､型述語を用いて検証するステップを設けた
+
+### 開発ワークフロー
+
+- Dev Containerで開発環境を構築した
+- mainブランチにプッシュ・プルリクエストされた時にCIが走り、`typecheck` / `lint` / `format` / `test` を自動実行するようにした
 
 ## セットアップ
 
@@ -24,21 +53,7 @@ npm install
 npm run dev
 ```
 
-## 現在の状態
+## 学習プロセスについて
 
-**計画書の全12ステップ(第1〜第3マイルストーン)に加え、第4マイルストーン ステップ13(ESLint + Prettier導入)・ステップ14(PRベースの開発フロー体験)が完了。**
-
-- 盤面・ピース・ゲーム状態は判別可能ユニオンなどで型付けされており、`any` は不使用。
-- 矢印キーで左右移動・回転・ソフトドロップ、スペースキーでハードドロップ。ライン消去・スコア加算も動作。
-- ピース画像は `src/sprites.ts` の `loadImage`/`loadAllSprites`(`async`/`await`、`Promise.all` による並行読み込み)で読み込んでから表示。失敗時は画面にエラーメッセージを表示。
-- `GameState`(`ready`/`playing`/`paused`/`gameover`)による状態遷移。Enterキーで開始/リスタート、Pキーで一時停止。
-- ハイスコアは `localStorage` に保存。`src/storage.ts` の `isValidHighScore`(型ガード)と自作ジェネリック関数 `loadFromStorage<T>` により、壊れたJSONや不正な型が入っていてもクラッシュしない。
-- Vitest で全純粋関数(`canPlace` / `lockPiece` / `rotate` / `move` / `hardDrop` / `calculateScore` / `clearFullRows` / `loadImage` / `loadAllSprites`)をテスト(全42ケースパス)。
-- `.devcontainer/` による Dev Container 化(VS Codeでの補完・HMR動作確認済み)。
-- GitHub Actions で `tsc --noEmit` / `eslint` / `prettier --check` / `vitest run` を独立ステップとして実行するCIが稼働中。
-- ESLint(Flat Config、型情報ベースの `recommendedTypeChecked` を有効化)と Prettier を導入済み。`npm run lint` / `lint:fix` / `format` で実行可能。
-
-各ステップの詳細な経緯・つまずき・学んだ型の概念は `work-log.md` を参照。
-次のアクションは、第4マイルストーン ステップ15(リポジトリを公開する)以降に進むこと。
-
-作業拠点は WSL2 ネイティブファイルシステム上の `~/projects/ts-tetris`。
+- 詳細な方針・スコープ・コーディング規約: [`tetris-ts-learning-plan.md`](./tetris-ts-learning-plan.md)
+- 進捗ログ・現在の状態: [`work-log.md`](./work-log.md)
