@@ -55,5 +55,9 @@ npm run dev
 
 ## 学習プロセスについて
 
+- 学習には Claude Code の Output Style を `Learning` にした上で活用した
+- このスタイルでは型定義･ロジックは自分で実装し､Claudeはレビュー･解説に徹する
+- まずは自分で考え､分からないところは聞き､MDNやWeb記事も読みながら型や関数について学習を進めた
+
 - 詳細な方針・スコープ・コーディング規約: [`tetris-ts-learning-plan.md`](./tetris-ts-learning-plan.md)
 - 進捗ログ・現在の状態: [`work-log.md`](./work-log.md)
