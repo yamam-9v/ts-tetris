@@ -16,4 +16,6 @@ jobs:
           node-version: 24
       - run: npm ci
       - run: npx tsc --noEmit
+      - run: npx eslint .
+      - run: npx prettier --check .
       - run: npx vitest run

@@ -40,7 +40,7 @@
 | 第3 | 10. localStorage + unknown 検証 + ジェネリクス | 完了 |
 | 第3 | 11. Dev Container 化 | 完了 |
 | 第3 | 12. GitHub Actions で CI | 完了(第3マイルストーン完了、全ステップ完了) |
-| 第4: 開発ワークフローの強化 | 13. ESLint + Prettier 導入 | 未着手(計画書のみ追加) |
+| 第4: 開発ワークフローの強化 | 13. ESLint + Prettier 導入 | 完了 |
 | 第4 | 14. PRベースの開発フローを一度体験する | 未着手(計画書のみ追加) |
 | 第4 | 15. リポジトリを公開する | 未着手(計画書のみ追加) |
 | 第4 | 16. GitHub Pages にデプロイする | 未着手(計画書のみ追加) |
@@ -532,3 +532,39 @@ Docker化に着手するタイミングで、`~/projects/ts-tetris` の最新状
   - 環境由来: プロンプト編集(取り消された分岐)で実行済みのシェルコマンドの副作用は、会話の巻き戻しでは自動的に取り消されず、ファイルシステムに残り得る。今回のように `git diff` で気づける変更ならまだしも、`.gitignore` 対象(`node_modules` など)の変化は `git status` だけでは検知できない点に注意が必要。
 - 新しく理解した型の概念: (該当なし)
 - 次回やること: フェーズ1(ステップ13: ESLint + Prettier導入)にあらためて着手する。
+
+## 2026-09-05
+
+- マイルストーン / ステップ: 13. ESLint + Prettier 導入(実装完了、学習者の「新しく理解した概念」確認待ちのままセッション終了)
+- やったこと:
+  - `eslint` / `@eslint/js` / `typescript-eslint` / `prettier` / `eslint-config-prettier` / `globals` を devDependencies に追加(計画書2.2節の「設定ファイル」領域としてClaudeが実装)。
+  - `eslint.config.js`(Flat Config)を新規作成。`src/**/*.ts` に対しては typescript-eslint の型情報ベースルール(`recommendedTypeChecked`、`projectService: true`)を適用し、`*.config.js`(`vite.config.js`)には `globals.node` を割り当てて `process` 未定義エラーを解消。`eslint-config-prettier` を末尾に適用してPrettierとのルール競合を無効化。
+  - `.prettierrc`(デフォルト設定のまま。既存コードがダブルクォート/セミコロンありでPrettierのデフォルトと一致していたため変更なし)、`.prettierignore`(`node_modules`/`dist`/`package-lock.json`/`*.md`を除外。学習ログ・計画書のMarkdownは自動整形すると意図しない差分が入るリスクがあるため対象外にした)を新規作成。
+  - `package.json` に `lint` / `lint:fix` / `format` スクリプトを追加。
+  - 初回の `npx eslint .` で6件のエラー(4ルール、4ファイル)を検出。計画書の進め方どおり、自動修正で一括で潰さず、まず「ルール別・ファイル別の一覧表」を作成して各ルールの趣旨(型チェックの穴の検出、意図的な未使用変数の扱い、Promiseの投げっぱなし防止)を説明したうえで、対応方針をルールごとに学習者に判断させた(AskUserQuestionで3問同時に確認)。
+    1. `@typescript-eslint/no-unsafe-assignment` / `no-unsafe-return`(`lines.ts:25` の `[...Array(clearedLineCount)]`、`collision.test.ts:94` の `[...Array(rotationNum)]`): 学習者は「`Array.from` に書き換える」を選択。ステップ7で学んだ「`Array(n)` は型注釈があっても実体は `any[]`」という罠が、ESLintのルールとして機械的に検出されることを実演した形。`Array.from({length: n}, callback)` に書き換えて解消。
+    2. `@typescript-eslint/no-unused-vars`(`lines.ts` の未使用コールバック引数 `_`、`storage.ts` の `catch (error)`): 学習者は「コード側で書かない形にする」を選択。`lines.ts` は引数自体を省略(`.map(() => ...)`)、`storage.ts` は catch の引数省略構文(`catch { ... }`)に変更して解消。
+    3. `@typescript-eslint/no-floating-promises`(`main.ts` の `main();`): 学習者は「`main().catch(...)` にする」を選択。`main()` 内部は既に `try/catch` で完結している設計だが、ESLintは静的にそこまで保証できないため警告していた点を確認した上で、`main().catch((error: unknown) => { console.error(error); });` に変更。
+  - Prettier(`npx prettier --check .`)で16ファイルにフォーマット差分(インデント幅の不統一など、意味を変えない差分)を検出。1ファイル(`types.ts`)でdiffをプレビューして安全を確認してから `--write` で一括整形。
+  - `.github/workflows/ci.yml` に `npx eslint .` と `npx prettier --check .` を、既存の `tsc --noEmit` / `vitest run` とは独立したステップとして追加。
+  - `npx tsc --noEmit` / `npx eslint .` / `npx prettier --check .` / `npx vitest run`(全42ケース)がすべてローカルで成功することを確認。
+  - ステップ13の完了条件(`lint`/`lint:fix`/`format`スクリプトが動き、CIに独立したlintステップがある。既存コードのlintエラーがルールごとに判断され解消されている)は満たしたが、計画書9節の「新しく理解した型の概念を一言で言えなければステップ未完了」の確認(学習者への質問)への回答を得る前にセッションが終了した。
+- 詰まった点(JS由来 / TS由来 / 環境由来): なし。
+- 新しく理解した型の概念: (未確認。次回セッション冒頭で学習者に確認すること)
+- 次回やること:
+  - まず学習者に「ステップ13で新しく理解した概念」を一言で聞き、回答が得られたらこのエントリに追記した上でステップ13を完了扱いにする(進捗サマリー表の更新も含む)。
+  - その後、第4マイルストーン ステップ14(PRベースの開発フローを一度体験する)に着手する。
+
+## 2026-09-05 (2)
+
+- マイルストーン / ステップ: 13. ESLint + Prettier 導入(devcontainer上での動作確認)
+- やったこと:
+  - ユーザーがdevcontainer上で `npm run lint` / `npx prettier --check .` を実行したところ失敗。エラーは `ESLint: 10.9.1`(ホスト側は`10.10.0`)という表示と `Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@eslint/js' imported from /workspace/eslint.config.js`、および `npx prettier` が未インストールパッケージのダウンロード確認で止まる、というもの。
+  - 原因を調査し、`.devcontainer/devcontainer.json` の `mounts`(`node_modules`を名前付きボリューム`tetris-ts-node_modules`にマウントする設定、ステップ11でWindows側バインドマウントのI/O遅延を避けるために採用)により、ホスト(WSL2ネイティブ)側の`node_modules`とコンテナ内の`node_modules`が完全に別実体であることが判明。今回のセッションでeslint/prettier関連パッケージをホスト側に`npm install`していたが、それはコンテナ内のボリュームには一切反映されていなかった。`postCreateCommand`の`npm install`はコンテナ「作成時」にのみ自動実行される仕組みのため、既存のコンテナ(既存のボリューム)にはpackage.jsonの変更が自動反映されない、という構造的な理由も併せて説明した。
+  - 対処法として、devcontainer内のターミナルで`npm install`(`npm ci`ではなく。ステップ11で踏んだ名前付きボリューム初回作成時の`root`所有権問題を`npm ci`によるnode_modules再作成で再度踏む可能性を避けるため)を実行するようユーザーに提案。実行後、正常に動作することを確認。
+- 詰まった点(JS由来 / TS由来 / 環境由来):
+  - 環境由来: Dev Containerの`node_modules`名前付きボリューム分離という設計(計画書4.2節、ステップ11)の副作用として、ホスト側でのnpm install/依存追加が既存のコンテナ内ボリュームには反映されない。依存関係を変更した際は、コンテナ内でも改めて`npm install`を実行する必要がある。
+- 新しく理解した概念(本人の言葉 + 深掘りのやり取り):
+  - 「ESLintはコードのルールを保っているかの品質チェック」「Prettierはコードの見た目を整える」「Array(n)はany型で危険なためArray.fromで代用」
+  - 上記に加え、「`Array(n)`は`any[]`とわかったが`Array.from`は何型を返すのか、`typeof`で確かめようとしたが両方`"object"`と出た、どう確かめればよいか」という自発的な深掘りの質問があった。`typeof`はJS実行時の値の種類を返すだけで、TypeScriptの型情報はコンパイル後に消え去る(型消去)ため実行時には区別する手がかりが残っていないことを説明。「わざと矛盾する型(`string`)に代入してtscのエラーメッセージから推論結果を読む」手法を`/tmp`のスクラッチファイルで実演し、`Array(3)`→`any[]`、`Array.from({length:3})`→`unknown[]`(第2引数のコールバックなし、`T`を特定する手がかりがないため)、`Array.from({length:3}, () => "x")`→`string[]`(コールバックの戻り値型から`T`が逆算される)という違いを確認した。
+- 次回やること: ステップ13完了。第4マイルストーン ステップ14(PRベースの開発フローを一度体験する)に着手する。

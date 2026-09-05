@@ -13,8 +13,7 @@ export function double(x: number) {
 export function greet(name: string | undefined) {
   if (typeof name === "string") {
     return name.toUpperCase();
-  }
-  else {
+  } else {
     return "";
   }
 }
@@ -31,7 +30,7 @@ export function greet(name: string | undefined) {
 // 各バリアントに共通のタグ用プロパティ(例: kind)を持たせ、
 // バリアントごとに必要な追加プロパティだけを持たせること。
 
-type RequestState = 
+type RequestState =
   | { kind: "idle" }
   | { kind: "loading" }
   | { kind: "success"; data: string }

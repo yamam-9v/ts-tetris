@@ -45,8 +45,9 @@ export function lockPiece(board: Board, piece: ActivePiece): Board {
 //   - (piece.rotation + 1) % 4 を計算した上で、それが 0|1|2|3 であることを
 //     TypeScriptに伝える(as を使う、など)
 export function rotate(board: Board, piece: ActivePiece): ActivePiece {
-  const newRotation: ActivePiece["rotation"] = (piece.rotation + 1) % 4 as 0|1|2|3;
-  const newPiece: ActivePiece = {...piece, rotation: newRotation};
+  const newRotation: ActivePiece["rotation"] = ((piece.rotation + 1) % 4) as
+    0 | 1 | 2 | 3;
+  const newPiece: ActivePiece = { ...piece, rotation: newRotation };
 
   if (canPlace(board, newPiece)) return newPiece;
   return piece;
@@ -55,10 +56,15 @@ export function rotate(board: Board, piece: ActivePiece): ActivePiece {
 // piece を (dx, dy) だけずらせるか試す。
 // 左右移動(dx=±1, dy=0)とソフトドロップ(dx=0, dy=1)の両方をこの1つの関数でまかなう。
 // 置ければずらした新しい ActivePiece を、置けなければ元の piece をそのまま返す(rotate と同じ形)。
-export function move(board: Board, piece: ActivePiece, dx: number, dy: number): ActivePiece {
+export function move(
+  board: Board,
+  piece: ActivePiece,
+  dx: number,
+  dy: number,
+): ActivePiece {
   const newX: ActivePiece["x"] = piece.x + dx;
   const newY: ActivePiece["y"] = piece.y + dy;
-  const newPiece: ActivePiece = {...piece, x: newX, y: newY};
+  const newPiece: ActivePiece = { ...piece, x: newX, y: newY };
 
   if (canPlace(board, newPiece)) return newPiece;
   return piece;
@@ -72,7 +78,7 @@ export function move(board: Board, piece: ActivePiece, dx: number, dy: number): 
 export function hardDrop(board: Board, piece: ActivePiece): ActivePiece {
   let newPiece = piece;
   const tryMove = () => move(board, newPiece, 0, 1);
-  while(true) {
+  while (true) {
     const next = tryMove();
     if (next === newPiece) break;
     newPiece = next;

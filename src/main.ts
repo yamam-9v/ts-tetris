@@ -65,14 +65,25 @@ async function main(): Promise<void> {
   let highScore = loadFromStorage(HIGH_SCORE_KEY, isValidHighScore) ?? 0;
 
   function startGame(): GameState {
-    return { kind: "playing", board: createEmptyBoard(), current: spawnPiece(), score: 0 };
+    return {
+      kind: "playing",
+      board: createEmptyBoard(),
+      current: spawnPiece(),
+      score: 0,
+    };
   }
 
   function drawBoard(board: Board): void {
     board.forEach((row, y) => {
       row.forEach((cell, x) => {
         if (cell !== null) {
-          drawSprite(ctx, sprites[cell], x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE);
+          drawSprite(
+            ctx,
+            sprites[cell],
+            x * CELL_SIZE,
+            y * CELL_SIZE,
+            CELL_SIZE,
+          );
         }
       });
     });
@@ -108,7 +119,10 @@ async function main(): Promise<void> {
 
       case "playing": {
         if (timestamp - lastFallTime > FALL_INTERVAL_MS) {
-          const moved: ActivePiece = { ...state.current, y: state.current.y + 1 };
+          const moved: ActivePiece = {
+            ...state.current,
+            y: state.current.y + 1,
+          };
 
           if (canPlace(state.board, moved)) {
             state = { ...state, current: moved };
@@ -206,4 +220,6 @@ async function main(): Promise<void> {
   requestAnimationFrame(loop);
 }
 
-main();
+main().catch((error: unknown) => {
+  console.error(error);
+});

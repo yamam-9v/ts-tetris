@@ -14,7 +14,7 @@ export type ActivePiece = {
 };
 
 export type GameState =
-    | { kind: "ready" }
-    | { kind: "playing"; board: Board; current: ActivePiece; score: number }
-    | { kind: "paused"; board: Board; current: ActivePiece; score: number }
-    | { kind: "gameover"; score: number };
+  | { kind: "ready" }
+  | { kind: "playing"; board: Board; current: ActivePiece; score: number }
+  | { kind: "paused"; board: Board; current: ActivePiece; score: number }
+  | { kind: "gameover"; score: number };

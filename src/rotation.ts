@@ -11,8 +11,8 @@ import { PIECE_SHAPES, PIECE_BOX_SIZE } from "./pieces";
 export function rotateOffset(offset: Offset, boxSize: number): Offset {
   const newOffset = {
     x: -offset.y + (boxSize - 1),
-    y: offset.x
-  }
+    y: offset.x,
+  };
   return newOffset;
 }
 
@@ -22,14 +22,19 @@ export function rotateOffset(offset: Offset, boxSize: number): Offset {
 // TODO(human): PIECE_SHAPES[kind](回転前の形)の各 Offset に、rotateOffset を
 // rotation 回だけ繰り返し適用した配列を返す実装を書く。
 // (rotation === 0 のときは回転前のまま返せばよい)
-export function getPieceShape(kind: PieceKind, rotation: 0 | 1 | 2 | 3): readonly Offset[] {
+export function getPieceShape(
+  kind: PieceKind,
+  rotation: 0 | 1 | 2 | 3,
+): readonly Offset[] {
   let newOffset = PIECE_SHAPES[kind];
 
   if (rotation === 0) return newOffset;
 
   let remaining = rotation;
-  for(remaining; remaining > 0; remaining--) {
-    newOffset = newOffset.map((offset) => rotateOffset(offset, PIECE_BOX_SIZE[kind]));
+  for (remaining; remaining > 0; remaining--) {
+    newOffset = newOffset.map((offset) =>
+      rotateOffset(offset, PIECE_BOX_SIZE[kind]),
+    );
   }
   return newOffset;
 }

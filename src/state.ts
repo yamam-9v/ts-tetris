@@ -11,14 +11,14 @@ export function spawnOrGameOver(
   if (!canPlace(board, newPiece)) {
     return {
       kind: "gameover",
-      score
-    }
+      score,
+    };
   }
 
   return {
     kind: "playing",
     board: board,
     current: newPiece,
-    score
-  }
+    score,
+  };
 }

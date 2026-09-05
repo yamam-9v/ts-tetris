@@ -23,8 +23,12 @@ export const SPRITE_PATHS: Readonly<Record<PieceKind, string>> = {
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
-    img.onload = () => {resolve(img)}
-    img.onerror = () => {reject(new Error("画像が読み込まれませんでした"))}
+    img.onload = () => {
+      resolve(img);
+    };
+    img.onerror = () => {
+      reject(new Error("画像が読み込まれませんでした"));
+    };
     img.src = src;
   });
 }
@@ -42,15 +46,20 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
 //   - 得られた HTMLImageElement の配列と、元のキー配列を組み合わせて
 //     Record<PieceKind, HTMLImageElement> を組み立てる(方法は自由。
 //     `.reduce()` はこの「配列からオブジェクトを組み立てる」用途にはよく合う)。
-export async function loadAllSprites(): Promise<Record<PieceKind, HTMLImageElement>> {
+export async function loadAllSprites(): Promise<
+  Record<PieceKind, HTMLImageElement>
+> {
   const spriteKeys = Object.keys(SPRITE_PATHS) as PieceKind[];
   const spriteImages = await Promise.all(
-    spriteKeys.map((key) => loadImage(SPRITE_PATHS[key]))
+    spriteKeys.map((key) => loadImage(SPRITE_PATHS[key])),
   );
-  const loadedSprites = spriteImages.reduce((object, image, index) => {
-    object[spriteKeys[index]] = image;
-    return object;
-  }, {} as Record<PieceKind, HTMLImageElement>);
+  const loadedSprites = spriteImages.reduce(
+    (object, image, index) => {
+      object[spriteKeys[index]] = image;
+      return object;
+    },
+    {} as Record<PieceKind, HTMLImageElement>,
+  );
 
   return loadedSprites;
 }

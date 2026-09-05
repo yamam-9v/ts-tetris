@@ -34,9 +34,9 @@ afterEach(() => {
 
 describe("loadImage", () => {
   it("正しいパスを渡すと解決 (resolve) し､その結果 Imageインスタンスの src プロパティが渡したパスになっている", async () => {
-    const path = "/sprites/I.svg"
+    const path = "/sprites/I.svg";
     const img = await loadImage(path);
-    expect(img.src).toEqual(path)
+    expect(img.src).toEqual(path);
   });
   it("誤ったパスを渡すと reject される", async () => {
     await expect(loadImage("fail.svg")).rejects.toThrow();

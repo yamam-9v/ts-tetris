@@ -7,7 +7,7 @@ export function getCanvasContext(): CanvasRenderingContext2D {
   const context = canvas.getContext("2d");
 
   if (!(context instanceof CanvasRenderingContext2D)) {
-    throw new Error("getContext(\"2d\")が失敗しました");
+    throw new Error('getContext("2d")が失敗しました');
   }
 
   return context;

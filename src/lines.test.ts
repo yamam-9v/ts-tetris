@@ -27,8 +27,14 @@ describe("clearFullRows", () => {
   it("揃った行が1つもない盤面ならclearedBoardは同じ内容､clearedLineCountは0", () => {
     const board = makeBoard([false]);
     const board1 = makeBoard([false, false, false]);
-    const expected: LineClearResult = {clearedBoard: board, clearedLineCount: 0};
-    const expected1: LineClearResult = {clearedBoard: board1, clearedLineCount: 0};
+    const expected: LineClearResult = {
+      clearedBoard: board,
+      clearedLineCount: 0,
+    };
+    const expected1: LineClearResult = {
+      clearedBoard: board1,
+      clearedLineCount: 0,
+    };
 
     expect(clearFullRows(board)).toEqual(expected);
     expect(clearFullRows(board1)).toEqual(expected1);
@@ -36,7 +42,10 @@ describe("clearFullRows", () => {
   it("1番下の行だけが揃っている盤面ならclearedBoardは先頭に1つ空行が追加され､揃っていた行が消える clearedLineCountは1", () => {
     const board = makeBoard([false, false, true]);
     const clearedBoard = makeBoard([false, false, false]);
-    const expected: LineClearResult = {clearedBoard: clearedBoard, clearedLineCount: 1};
+    const expected: LineClearResult = {
+      clearedBoard: clearedBoard,
+      clearedLineCount: 1,
+    };
 
     expect(clearFullRows(board)).toEqual(expected);
   });
@@ -44,7 +53,10 @@ describe("clearFullRows", () => {
     const board = makeBoard([false, false, true, true]);
     const board1 = makeBoard([false, true, true, false]);
     const clearedBoard = makeBoard([false, false, false, false]);
-    const expected: LineClearResult = {clearedBoard: clearedBoard, clearedLineCount: 2};
+    const expected: LineClearResult = {
+      clearedBoard: clearedBoard,
+      clearedLineCount: 2,
+    };
 
     expect(clearFullRows(board)).toEqual(expected);
     expect(clearFullRows(board1)).toEqual(expected);
