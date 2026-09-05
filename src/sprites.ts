@@ -1,13 +1,16 @@
 import type { PieceKind } from "./types";
 
+// import.meta.env.BASE_URL は vite.config.js の base の値(末尾スラッシュ付き)。
+// 開発時は "/"、GitHub Pagesなどのサブパス配信時は "/ts-tetris/" になるため、
+// 絶対パスをハードコードせずここから組み立てる。
 export const SPRITE_PATHS: Readonly<Record<PieceKind, string>> = {
-  I: "/sprites/I.svg",
-  O: "/sprites/O.svg",
-  T: "/sprites/T.svg",
-  S: "/sprites/S.svg",
-  Z: "/sprites/Z.svg",
-  J: "/sprites/J.svg",
-  L: "/sprites/L.svg",
+  I: `${import.meta.env.BASE_URL}sprites/I.svg`,
+  O: `${import.meta.env.BASE_URL}sprites/O.svg`,
+  T: `${import.meta.env.BASE_URL}sprites/T.svg`,
+  S: `${import.meta.env.BASE_URL}sprites/S.svg`,
+  Z: `${import.meta.env.BASE_URL}sprites/Z.svg`,
+  J: `${import.meta.env.BASE_URL}sprites/J.svg`,
+  L: `${import.meta.env.BASE_URL}sprites/L.svg`,
 };
 
 // 画像1枚を非同期に読み込む。
