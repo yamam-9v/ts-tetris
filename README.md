@@ -11,6 +11,9 @@ TypeScript を身につけることを目的とした学習プロジェクト。
 - Vite(`vanilla-ts` テンプレート)
 - Canvas 2D API
 - Vitest
+- ESLint(Flat Config、型情報ベースの `recommendedTypeChecked`)/ Prettier
+- Dev Container
+- GitHub Actions(CI)
 
 ## セットアップ
 
