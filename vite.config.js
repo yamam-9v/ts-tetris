@@ -5,6 +5,7 @@ import { defineConfig } from "vitest/config";
 const isDevContainer = process.env.DEVCONTAINER === "true";
 
 export default defineConfig({
+  base: "/ts-tetris/",
   server: {
     host: true,
     allowedHosts: [".tail6bcb19.ts.net"],
