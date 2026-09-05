@@ -568,3 +568,16 @@ Docker化に着手するタイミングで、`~/projects/ts-tetris` の最新状
   - 「ESLintはコードのルールを保っているかの品質チェック」「Prettierはコードの見た目を整える」「Array(n)はany型で危険なためArray.fromで代用」
   - 上記に加え、「`Array(n)`は`any[]`とわかったが`Array.from`は何型を返すのか、`typeof`で確かめようとしたが両方`"object"`と出た、どう確かめればよいか」という自発的な深掘りの質問があった。`typeof`はJS実行時の値の種類を返すだけで、TypeScriptの型情報はコンパイル後に消え去る(型消去)ため実行時には区別する手がかりが残っていないことを説明。「わざと矛盾する型(`string`)に代入してtscのエラーメッセージから推論結果を読む」手法を`/tmp`のスクラッチファイルで実演し、`Array(3)`→`any[]`、`Array.from({length:3})`→`unknown[]`(第2引数のコールバックなし、`T`を特定する手がかりがないため)、`Array.from({length:3}, () => "x")`→`string[]`(コールバックの戻り値型から`T`が逆算される)という違いを確認した。
 - 次回やること: ステップ13完了。第4マイルストーン ステップ14(PRベースの開発フローを一度体験する)に着手する。
+
+## 2026-09-05 (3)
+
+- マイルストーン / ステップ: 13. ESLint + Prettier 導入(追加の改善、完了後のフォローアップ)
+- やったこと:
+  - ユーザーから「`ci.yml`が`npm ci`以外`npx`を直に叩いているが、これでいいのか」との質問。`npx <command>`(`node_modules/.bin`を直接叩く、`scripts`を経由しない)と`npm run <script>`(`package.json`の`scripts`定義を実行する)の違いを説明。今回は`npm ci`直後で`node_modules/.bin`が揃っているため動作上の問題はないが、`package.json`にすでに`typecheck`/`lint`/`test`スクリプトがあるのに`ci.yml`側でコマンドを生で書き直すと、将来スクリプトにオプションを追加した際に両方直す必要が出る(二重管理)という保守性の指摘を行った。ユーザーの合意を得て、`ci.yml`を`npm run typecheck` / `npm run lint` / `npm run format:check` / `npm test`に変更し、`prettier --check .`用に`package.json`へ`format:check`スクリプトを追加。
+  - 続けてユーザーから「`lint`(オプションなし)が変更なし・`lint:fix`(オプションあり)が変更ありなのに対し、`format`(オプションなし)は変更あり(`--write`)・`format:check`(オプションあり)が変更なし、という命名が逆で感覚とズレている。オプションなし→変更なしに統一した方が、誤って短いコマンドを打ってしまったときにも安全では」という指摘があり、妥当と判断。`format`を`prettier --check .`(チェックのみ、安全なデフォルト)、`format:fix`を`prettier --write .`(書き換えあり)に改名し、`lint`/`lint:fix`と対称的な命名に統一。`ci.yml`も`npm run format:check`→`npm run format`に追従。
+  - ローカルで`npm run typecheck` / `npm run lint` / `npm run format` / `npm test`、および`npm run format:fix`(既に整形済みのため無変更)が想定通り動くことを確認してからコミット・プッシュ。
+- 詰まった点(JS由来 / TS由来 / 環境由来): なし(ツール運用・命名設計に関する気づきが中心)。
+- 新しく理解した概念(本人の言葉ベース):
+  - `npx`はローカルのバイナリを直接叩くだけで`package.json`の`scripts`を経由しない一方、`npm run`は`scripts`定義を実行するため、CIとローカルのコマンドを1箇所(`package.json`)に集約できる。
+  - コマンド名の対称性(オプションなし=安全なデフォルト、修飾語付き=破壊的な操作)を意図的に揃えることで、誤操作への耐性が上がる、という設計判断をユーザー自身が指摘・実施した。
+- 次回やること: 第4マイルストーン ステップ14(PRベースの開発フローを一度体験する)に着手する。
