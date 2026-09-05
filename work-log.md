@@ -42,7 +42,7 @@
 | 第3 | 12. GitHub Actions で CI | 完了(第3マイルストーン完了、全ステップ完了) |
 | 第4: 開発ワークフローの強化 | 13. ESLint + Prettier 導入 | 完了 |
 | 第4 | 14. PRベースの開発フローを一度体験する | 完了(branch protectionの実際の強制確認はステップ15公開後に持ち越し) |
-| 第4 | 15. リポジトリを公開する | 進行中(セキュリティチェック・README整備は完了、実際の公開はこれから) |
+| 第4 | 15. リポジトリを公開する | 完了 |
 | 第4 | 16. GitHub Pages にデプロイする | 未着手(計画書のみ追加) |
 | 第4 | 17. `noUncheckedIndexedAccess` の導入 | 未着手(計画書のみ追加) |
 
@@ -649,3 +649,17 @@ Docker化に着手するタイミングで、`~/projects/ts-tetris` の最新状
 - 詰まった点(JS由来 / TS由来 / 環境由来): なし(日本語文章表現の調整)。
 - 新しく理解した概念: (該当なし)
 - 次回やること: 実際にリポジトリをGitHubの画面からPublicに変更する(Settings → General → Danger Zone → Change visibility)。Public化後、branch protectionが実際に機能することを確認し、README.mdにその旨を書き戻す。
+
+## 2026-09-05 (7)
+
+- マイルストーン / ステップ: 15. リポジトリを公開する(完了)
+- やったこと:
+  - ユーザーがGitHubの画面(Settings → General → Danger Zone → Change visibility)からリポジトリをPublicに変更。
+  - branch protectionが実際に機能しているかを実地で検証するため、作業ブランチ `test/branch-protection-check` を作成し、既存コードには触れず `src/branch-protection-check.test.ts`(`expect(1).toBe(2)` でわざと失敗する一時テスト)をClaudeが追加。ローカルで `npm test` を実行し、意図通り1件失敗することを確認してからプッシュ。
+  - PRを作成し、CIが実際に赤く失敗すること(`CI / test (pull_request) Failing after 14s`)、`Required` ラベル付きのチェックにより「Merge pull request」ボタンがグレーアウトし「Merging is blocked due to failing merge requirements」と表示されることを、ユーザーがスクリーンショットで確認・共有。branch protectionがPublicリポジトリ上で実際に強制されていることが確定した。
+  - 検証後、PRはマージせず「Close pull request」でクローズしてもらい、ローカル・リモート両方の検証用ブランチ(`test/branch-protection-check`)を削除して後片付け。
+  - README.mdの「### 開発ワークフロー」に、事実確認が取れたbranch protectionの記述(「branch protectionでmainブランチを保護し、CIが通らないとマージできないようにした」)を書き戻した。ステップ15前半で一旦削除していた記述を、実地検証を経て正式に復活させた形。
+  - これで計画書のステップ15完了条件(公開前のセキュリティチェック完了、READMEがポートフォリオとして機能する内容)に加え、実際の公開・branch protectionの実効性確認まで一通り完了した。
+- 詰まった点(JS由来 / TS由来 / 環境由来): なし。
+- 新しく理解した概念: 設定画面の表示(警告が消えた等)だけでは「設定が保存されているか」しか分からず、「実際に効くか」を確かめるには、わざと失敗する変更でPRを作りマージボタンの挙動を目で見る、という実地検証が必要という考え方。
+- 次回やること: 第4マイルストーン ステップ16(GitHub Pagesにデプロイする)に着手する。`vite.config.js` の `base` をリポジトリ名に合わせ、deploy用ワークフローを追加し、スプライト画像(`public/sprites/*.svg`)のサブパス配信も確認する。

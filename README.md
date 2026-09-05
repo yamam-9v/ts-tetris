@@ -43,6 +43,7 @@ TypeScript を身につけることを目的とした学習プロジェクト
 
 - Dev Containerで開発環境を構築した
 - mainブランチにプッシュ・プルリクエストされた時にCIが走り、`typecheck` / `lint` / `format` / `test` を自動実行するようにした
+- branch protectionでmainブランチを保護し､CIが通らないとマージできないようにした
 
 ## セットアップ
 
