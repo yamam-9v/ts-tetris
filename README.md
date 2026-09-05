@@ -9,11 +9,11 @@ TypeScript を身につけることを目的とした学習プロジェクト
 
 ## デモ
 
-準備中
+https://yamam-9v.github.io/ts-tetris/
 
 ## スクリーンショット
 
-準備中
+![screenshot](./docs/screenshot.png)
 
 ## 技術スタック
 
