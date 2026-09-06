@@ -12,9 +12,9 @@ export function canPlace(board: Board, piece: ActivePiece): boolean {
   return boardPos.every(
     (pos) =>
       0 <= pos.x &&
-      pos.x < board[0].length &&
+      pos.x < (board[0]?.length ?? 0) &&
       pos.y < board.length &&
-      board[pos.y][pos.x] === null,
+      board[pos.y]?.[pos.x] === null,
   );
 }
 

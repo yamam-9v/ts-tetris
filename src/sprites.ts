@@ -58,7 +58,9 @@ export async function loadAllSprites(): Promise<
   );
   const loadedSprites = spriteImages.reduce(
     (object, image, index) => {
-      object[spriteKeys[index]] = image;
+      // spriteImages は spriteKeys.map(...) から Promise.all で作られており、
+      // 常に spriteKeys と同じ長さになる(構造的に保証されている)。
+      object[spriteKeys[index]!] = image;
       return object;
     },
     {} as Record<PieceKind, HTMLImageElement>,
