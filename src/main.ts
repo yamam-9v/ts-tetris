@@ -42,7 +42,10 @@ function createEmptyBoard(): Board {
 }
 
 function spawnPiece(): ActivePiece {
-  const kind = PIECE_KINDS[Math.floor(Math.random() * PIECE_KINDS.length)];
+  // Math.random() は [0, 1) の範囲を返すため、
+  // Math.floor(Math.random() * PIECE_KINDS.length) は必ず
+  // 0 から PIECE_KINDS.length - 1 の範囲に収まる(数学的に保証されている)。
+  const kind = PIECE_KINDS[Math.floor(Math.random() * PIECE_KINDS.length)]!;
   return { kind, x: Math.floor(BOARD_WIDTH / 2) - 2, y: 0, rotation: 0 };
 }
 

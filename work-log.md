@@ -44,7 +44,7 @@
 | 第4 | 14. PRベースの開発フローを一度体験する | 完了(branch protectionの実際の強制確認はステップ15公開後に持ち越し) |
 | 第4 | 15. リポジトリを公開する | 完了 |
 | 第4 | 16. GitHub Pages にデプロイする | 完了 |
-| 第4 | 17. `noUncheckedIndexedAccess` の導入 | 未着手(計画書のみ追加) |
+| 第4 | 17. `noUncheckedIndexedAccess` の導入 | 完了(第4マイルストーン全ステップ完了) |
 
 ---
 
@@ -62,7 +62,9 @@
 - PRベース(作業ブランチ→PR作成→CI緑→マージ)の開発フローとbranch protection(「Require a pull request before merging」「Do not allow bypassing」も有効化済み)を導入。実地検証済みで、CIが失敗するPRはマージがブロックされ、mainへの直接pushも拒否される。
 - リポジトリはPublic化済み。GitHub Pagesで公開中: https://yamam-9v.github.io/ts-tetris/ (`vite.config.js`の`base`設定と、`import.meta.env.BASE_URL`を使ったスプライト画像パスの組み立てにより、サブパス配信でも正しく動作することを実機確認済み)。
 
-次のアクションは、第4マイルストーン ステップ17(`noUncheckedIndexedAccess`の導入)に進むかどうかの相談。
+- `tsconfig.json`に`noUncheckedIndexedAccess`を導入済み。配列添字アクセス由来の型エラー6件を、非nullアサーション/`??`フォールバックのいずれかで対応(判断の根拠はケースごとに異なる)。
+
+第4マイルストーン(ステップ13〜17)完了。次のアクションは、全体の振り返り、または計画書6.1節の任意課題(SRSウォールキック、ゴーストピース、ホールド機能、T-Spin判定など)への着手をユーザーと相談すること。
 作業拠点は WSL2 ネイティブファイルシステム上の `~/projects/ts-tetris`。
 
 ---
@@ -688,3 +690,24 @@ Docker化に着手するタイミングで、`~/projects/ts-tetris` の最新状
 - 詰まった点(JS由来 / TS由来 / 環境由来): なし。
 - 新しく理解した概念: (該当なし)
 - 次回やること: ステップ17(`noUncheckedIndexedAccess`の導入)に着手するかどうかユーザーと相談する。
+
+## 2026-09-06 (3)
+
+- マイルストーン / ステップ: 17. `noUncheckedIndexedAccess` の導入(完了)
+- やったこと:
+  - `noUncheckedIndexedAccess`が何をするフラグか(添字アクセスの結果型に自動で`| undefined`が付く)、なぜ`strict`に含まれていないか(既存プロジェクトを壊すほど破壊的なためオプトインになっている)を説明。
+  - `tsconfig.json`に一時的に追加し`tsc --noEmit`を実行、エラーが6件・4ファイル(`collision.ts`×2、`lines.ts`×2、`main.ts`×1、`sprites.ts`×1)であることを確認。計画書の目安(2〜4h)より少なく、下限程度で収まりそうと見積もった。
+  - `collision.ts`の`canPlace`(`board[0].length`、`board[pos.y][pos.x]`)をClaudeが手本として先に修正。オプショナルチェーン(`?.`)+`??`を使い、非nullアサーション(`!`)を避けた理由(型に嘘をつくと`noUncheckedIndexedAccess`を入れた意味がなくなる)を説明。
+  - 残り5件を学習者がTODO(human)方式で1件ずつ判断・実装。
+    1. `lines.ts`の`clearFullRows`(`board[0].length`): `canPlace`と全く同じパターンを正しく応用し`board[0]?.length ?? 0`に修正。
+    2. `lines.ts`の`calculateScore`(ルックアップテーブル`scoreByClearedLines[clearedLineCount - 1]`): `?? 0`を選択。非nullアサーション回避理由(型に嘘をつく)、早期リターン回避理由(範囲チェックをしても型情報には伝わらずエラーが消えないことを実際に試して確認)、型変更回避理由(呼び出し側`main.ts`への影響)を正確に言語化。
+    3. `main.ts`の`spawnPiece`(`PIECE_KINDS[Math.floor(Math.random() * PIECE_KINDS.length)]`): 非nullアサーションを選択。`Math.random()`が`[0,1)`を返すという数学的保証を根拠にし、加えて「`??`でフォールバックすると、理論上ありえないケースでランダム性が崩れる(常に同じピースに偏る)」という副作用まで検討した上での判断。
+    4. `sprites.ts`の`loadAllSprites`(`spriteKeys[index]`): 非nullアサーションを選択。`spriteImages`が`spriteKeys.map(...)`から`Promise.all`で作られ、常に`spriteKeys`と同じ長さになるという構造的保証を正確に理解した上での判断。
+  - 各所のTODOコメント残骸をClaudeが都度整理。`lines.ts`には以前のステップ7実装時の古いTODOコメント(`LineClearResult`型定義、`clearFullRows`、`calculateScore`の3箇所)も残っていたため、あわせて削除。
+  - 最終確認として`typecheck`/`lint`/`format`/`test`(全42ケース)がすべて成功することを確認。
+- 詰まった点(JS由来 / TS由来 / 環境由来): なし。
+- 新しく理解した型の概念(本人の言葉ベース):
+  - 数値の範囲チェック(`if`文)をしても、TypeScriptの型システムはそれを配列アクセスの安全性の保証には変換してくれない(絞り込みが効くのは`typeof`/`instanceof`のような値の形に関するチェックのみで、数値の大小関係には効かない)ことを、`calculateScore`で早期リターンを試して型エラーが消えないことから体感した。
+  - 非nullアサーションを避けるべき理由(型に嘘をつく)と、逆に正当化されるケース(`Math.random()`の数学的保証、`map`で作られた配列同士の長さの対応関係など、型システムでは表現できないが実行時に証明できる不変条件がある場合)の両方を、4件の判断を通じて使い分けられるようになった。
+  - `??`によるフォールバックは、想定外の値が来た場合の挙動(黙ってデフォルト値になる)にも意味があり、「ランダム性が崩れる」のような副作用まで考慮して選択肢を評価する視点を得た。
+- 次回やること: 計画書に定義された第4マイルストーンの全ステップ(13〜17)が完了。全体の振り返り、または計画書6.1節の任意課題(SRSウォールキック、ゴーストピース、ホールド機能、T-Spin判定など)への着手をユーザーと相談する。
